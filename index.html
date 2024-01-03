@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AC-Poject</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            user-select: none;
+            overflow: hidden;
+            font-family: 'Lobster', cursive; /* Substituído para 'Lobster' */
+        }
+
+        #header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1,
+        h3 {
+            color: orange;
+            font-size: 24px;
+            transition: opacity 0.50s;
+        }
+
+        h3 {
+            color: gray;
+            font-size: 18px;
+            transition: opacity 0.50s;
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: orange;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            font-family: 'Pacifico', cursive; /* Substituído para 'Pacifico' */       
+            z-index: 9999;
+            font-size: 10px;
+        }
+
+        #gifContainer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        #holdingText {
+            position: fixed;
+            top: 80%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            color: orange;
+            font-size: 18px;
+        }
+    </style>
+
+</head>
+
+<body ontouchstart="enqueueClick()" ontouchend="processClick()" onmousedown="enqueueClick()" onmouseup="processClick()">
+    <div id="header">
+        <h1 id="title">Ana Clara e sua habilidade:</h1>
+        <h3 id="subtitle">Toque na tela</h3>
+    </div>
+
+    <div id="gifContainer">
+        <img id="gifImage" src="https://i.pinimg.com/originals/42/9a/14/429a149503a3836eeb005f91c0d081b9.gif" alt="GIF">
+    </div>
+
+    <div id="holdingText">Ploff!</div>
+
+    <div id="footer">By: Otávio ♡</div>
+
+    <script>
+        let loading = false;
+        let timer;
+        const holdingTextTimeout = 860; // Tempo em milissegundos antes do "Ploff!" aparecer
+        let clickQueue = [];
+        let processingClick = false;
+
+        function enqueueClick() {
+            clickQueue.push(true);
+            if (!processingClick) {
+                processClick();
+            }
+        }
+
+        function processClick() {
+            if (clickQueue.length > 0) {
+                processingClick = true;
+                const currentClick = clickQueue.shift();
+
+                if (currentClick) {
+                    // Se o clique é válido, continue com o processamento
+                    processValidClick();
+                } else {
+                    // Se o clique não é válido, espere o próximo clique
+                    processingClick = false;
+                    processClick();
+                }
+            } else {
+                processingClick = false;
+            }
+        }
+
+        function processValidClick() {
+            if (loading) {
+                // Se necessário, adicione aqui lógica para tratar cliques rápidos consecutivos sem o aviso
+            } else {
+                // Processa o clique normalmente
+                loading = true;
+
+                // Oculta o título e o subtítulo
+                document.getElementById('title').style.opacity = 0;
+                document.getElementById('subtitle').style.opacity = 0;
+
+                document.getElementById('gifImage').src = "https://i.pinimg.com/originals/42/9a/14/429a149503a3836eeb005f91c0d081b9.gif";
+                document.getElementById('gifContainer').style.display = 'block';
+
+                // Configura um temporizador para exibir o texto "Ploff!" após holdingTextTimeout milissegundos
+                timer = setTimeout(function () {
+                    document.getElementById('holdingText').style.display = 'block';
+                }, holdingTextTimeout);
+
+                // Configura um temporizador para ocultar o GIF e o texto após 1290 milissegundos (1,29 segundos)
+                setTimeout(function () {
+                    stopLoading();
+                }, 1285);
+            }
+        }
+
+        function stopLoading() {
+            // Limpa os temporizadores
+            clearTimeout(timer);
+
+            if (loading) {
+                document.getElementById('gifContainer').style.display = 'none';
+                document.getElementById('gifImage').src = ""; // Para o GIF
+
+                // Exibe o título e o subtítulo novamente
+                document.getElementById('title').style.opacity = 1;
+                document.getElementById('subtitle').style.opacity = 1;
+
+                // Oculta o texto "Ploff!"
+                document.getElementById('holdingText').style.display = 'none';
+            }
+            loading = false;
+
+            // Habilita os cliques novamente após um curto atraso
+            setTimeout(function () {
+                processClick();
+            }, 1000); // Ajuste o valor conforme necessário
+        }
+    </script>
+</body>
+
+</html>
