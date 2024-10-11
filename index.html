@@ -1,1 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de Código de Barras</title>
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        #scanner-container {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            border: 2px solid #000;
+            display: none;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
 
+    <h1>Leitor de Código de Barras</h1>
+    <button id="start-scan">Iniciar Leitura</button>
+    <div id="scanner-container"></div>
+    <div id="result">Código detectado: <span id="barcode-result">Nenhum</span></div>
+
+    <script>
+        // Função para iniciar a câmera
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(function(stream) {
+                // Exibe o container da câmera
+                document.getElementById('scanner-container').style.display = 'block';
+                document.getElementById('start-scan').style.display = 'none'; // Oculta o botão
+                
+                // Iniciar Quagga com o stream da câmera
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#scanner-container'),
+                        constraints: {
+                            width: 400,
+                            height: 300,
+                            facingMode: "environment"
+                        }
+                    },
+                    decoder: {
+                        readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader"] 
+                    }
+                }, function(err) {
+                    if (err) {
+                        console.error(err);
+                        return;
+                    }
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(function(data) {
+                    var code = data.codeResult.code;
+                    document.getElementById('barcode-result').textContent = code;
+                });
+            })
+            .catch(function(err) {
+                alert("Erro ao acessar a câmera: " + err.message);
+            });
+        }
+
+        // Inicia o processo ao clicar no botão
+        document.getElementById('start-scan').addEventListener('click', function() {
+            startCamera(); // Chama a função que solicita permissão da câmera
+        });
+    </script>
+
+</body>
+</html>
