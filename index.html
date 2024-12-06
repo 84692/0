@@ -1,81 +1,31 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detector de Rosto</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    <title>Meu Site no GitHub Pages</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #f4f4f9;
+            color: #333;
         }
-
-        video {
-            border: 2px solid #000;
-            width: 640px;
-            height: 480px;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+        h1 {
+            color: #0078d4;
         }
     </style>
 </head>
-
 <body>
-    <h1>Detector de Rosto</h1>
-    <video id="video" autoplay></video>
-    <canvas id="overlay"></canvas>
-
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('overlay');
-        const context = canvas.getContext('2d');
-
-        // Carregar os modelos da face-api.js
-        async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/models');
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/models');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/models');
-        }
-
-        // Iniciar a captura de vídeo
-        async function startVideo() {
-            const stream = await navigator.mediaDevices.getUser Media({ video: {} });
-            video.srcObject = stream;
-        }
-
-        // Detectar rostos
-        async function detectFaces() {
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            const resizedDetections = faceapi.resizeResults(detections, { width: video.width, height: video.height });
-            faceapi.draw.drawDetections(canvas, resizedDetections);
-            faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-            requestAnimationFrame(detectFaces);
-        }
-
-        // Função principal
-        async function main() {
-            await loadModels();
-            startVideo();
-            video.addEventListener('play', () => {
-                canvas.width = video.width;
-                canvas.height = video.height;
-                detectFaces();
-            });
-        }
-
-        main();
-    </script>
+    <div>
+        <h1>Bem-vindo ao meu site!</h1>
+        <p>Este site está hospedado no <strong>GitHub Pages</strong>.</p>
+        <p>Edite o <code>index.html</code> para personalizar.</p>
+    </div>
 </body>
-
 </html>
