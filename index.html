@@ -1,42 +1,192 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imagem Centralizada</title>
+    <title>ChatGPT Mobile</title>
     <style>
-        body {
+        * {
             margin: 0;
-            background-color: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden; /* Para evitar barras de rolagem */
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
         }
-        iframe {
-            border: none;
+
+        :root {
+            --bg-color: #343541;
+            --text-color: #ffffff;
+            --input-bg: #40414f;
+            --border-color: #555766;
+        }
+
+        .light-mode {
+            --bg-color: #ffffff;
+            --text-color: #343541;
+            --input-bg: #f7f7f8;
+            --border-color: #d9d9e3;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
             width: 100%;
-            height: 100%;
+        }
+
+        .chat-message {
+            margin: 15px 0;
+            padding: 12px 18px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-break: break-word;
+        }
+
+        .user-message {
+            background: var(--input-bg);
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background: var(--border-color);
+            margin-right: auto;
+        }
+
+        .input-container {
+            padding: 15px;
+            background: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            outline: none;
+        }
+
+        #send-btn {
+            padding: 12px 20px;
+            background: #10a37f;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #send-btn:hover {
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            justify-content: center;
+        }
+
+        .theme-btn {
+            padding: 8px 15px;
+            background: var(--input-bg);
+            border: none;
+            border-radius: 5px;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .chat-message {
+                max-width: 90%;
+                padding: 10px 15px;
+            }
+            
+            #user-input {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <iframe id="imageFrame" src="https://drive.google.com/file/d/1Zh5_Ie2f1DbhTg0RRsU4jevu2aqsP1pX/preview"></iframe>
+    <div class="controls">
+        <button class="theme-btn" onclick="toggleTheme()">Alternar Tema</button>
+    </div>
+    
+    <div class="chat-container" id="chat-container"></div>
+    
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="Digite sua mensagem...">
+        <button id="send-btn" onclick="sendMessage()">Enviar</button>
+    </div>
 
     <script>
-        window.addEventListener("load", function() {
-            var iframe = document.getElementById("imageFrame");
-            iframe.onload = function() {
-                var iframeContent = iframe.contentWindow.document;
-                var img = iframeContent.querySelector("img");
-                if (img) {
-                    iframe.style.width = img.width + "px";
-                    iframe.style.height = img.height + "px";
-                    // Centralizando o iframe com base na imagem
-                    iframe.style.margin = "auto";
-                }
-            };
+        const API_URL = 'https://api.g4f.ai/v1/chat/completions'; // API pública[citation:5]
+
+        let isLightMode = localStorage.getItem('theme') === 'light';
+        if (isLightMode) document.body.classList.add('light-mode');
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            isLightMode = !isLightMode;
+            localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
+        }
+
+        function addMessage(message, isUser = true) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+            
+            if (!message) return;
+
+            userInput.value = '';
+            addMessage(message, true);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: message }],
+                        model: 'gpt-3.5-turbo'
+                    })
+                });
+
+                const data = await response.json();
+                addMessage(data.choices[0].message.content, false);
+            } catch (error) {
+                addMessage('Desculpe, ocorreu um erro. Tente novamente.', false);
+            }
+        }
+
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
     </script>
 </body>
