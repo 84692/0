@@ -1,193 +1,111 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT Mobile</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        :root {
-            --bg-color: #343541;
-            --text-color: #ffffff;
-            --input-bg: #40414f;
-            --border-color: #555766;
-        }
-
-        .light-mode {
-            --bg-color: #ffffff;
-            --text-color: #343541;
-            --input-bg: #f7f7f8;
-            --border-color: #d9d9e3;
-        }
-
-        body {
-            background: var(--bg-color);
-            color: var(--text-color);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .chat-message {
-            margin: 15px 0;
-            padding: 12px 18px;
-            border-radius: 8px;
-            max-width: 80%;
-            word-break: break-word;
-        }
-
-        .user-message {
-            background: var(--input-bg);
-            margin-left: auto;
-        }
-
-        .bot-message {
-            background: var(--border-color);
-            margin-right: auto;
-        }
-
-        .input-container {
-            padding: 15px;
-            background: var(--bg-color);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 10px;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        #user-input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--input-bg);
-            color: var(--text-color);
-            outline: none;
-        }
-
-        #send-btn {
-            padding: 12px 20px;
-            background: #10a37f;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        #send-btn:hover {
-            opacity: 0.8;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            padding: 10px;
-            justify-content: center;
-        }
-
-        .theme-btn {
-            padding: 8px 15px;
-            background: var(--input-bg);
-            border: none;
-            border-radius: 5px;
-            color: var(--text-color);
-            cursor: pointer;
-        }
-
-        @media (max-width: 600px) {
-            .chat-message {
-                max-width: 90%;
-                padding: 10px 15px;
-            }
-            
-            #user-input {
-                padding: 10px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Cadastro e Login com Supabase</title>
+  <style>
+    body { background-color: #121212; color: #ffffff; font-family: sans-serif; max-width: 400px; margin: auto; padding: 20px; }
+    form { margin-bottom: 20px; }
+    input { display: block; margin: 10px 0; padding: 8px; width: 100%; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; }
+    button { padding: 8px 16px; background-color: #6200ea; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #3700b3; }
+    #mainContent { display: none; text-align: center; }
+    #loginSection { display: none; }
+    #status { position: fixed; bottom: 10px; right: 10px; background-color: #333; color: #fff; padding: 5px 10px; border-radius: 5px; }
+  </style>
 </head>
 <body>
-    <div class="controls">
-        <button class="theme-btn" onclick="toggleTheme()">Alternar Tema</button>
+  <div id="authSection">
+    <h2>Cadastro</h2>
+    <form id="cadastroForm">
+      <input type="email" id="cadastroEmail" placeholder="Email" required>
+      <input type="password" id="cadastroSenha" placeholder="Senha" required>
+      <button type="submit">Criar Conta</button>
+    </form>
+    <button id="showLogin">Já tem uma conta? Faça login</button>
+
+    <div id="loginSection">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email" required>
+        <input type="password" id="loginSenha" placeholder="Senha" required>
+        <button type="submit">Entrar</button>
+      </form>
     </div>
-    
-    <div class="chat-container" id="chat-container"></div>
-    
-    <div class="input-container">
-        <input type="text" id="user-input" placeholder="Digite sua mensagem...">
-        <button id="send-btn" onclick="sendMessage()">Enviar</button>
-    </div>
+  </div>
 
-    <script>
-        const API_URL = 'https://api.g4f.ai/v1/chat/completions'; // API pública[citation:5]
+  <div id="mainContent">
+    <h1>Bem-vindo, <span id="userEmail"></span>!</h1>
+  </div>
 
-        let isLightMode = localStorage.getItem('theme') === 'light';
-        if (isLightMode) document.body.classList.add('light-mode');
+  <div id="msg"></div>
+  <div id="status">Conectando ao banco de dados...</div>
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            isLightMode = !isLightMode;
-            localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
-        }
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-        function addMessage(message, isUser = true) {
-            const chatContainer = document.getElementById('chat-container');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${isUser ? 'user-message' : 'bot-message'}`;
-            messageDiv.textContent = message;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+    const supabaseUrl = 'https://jflrqaazwzrnzgiibusv.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmbHJxYWF6d3pybnpnaWlidXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyMDcxOTUsImV4cCI6MjA1ODc4MzE5NX0.EbHtOfrKZdd_0-q5DoqlWDusi_3aydmg1PENFypIcfE';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const msg = document.getElementById('msg');
+    const authSection = document.getElementById('authSection');
+    const mainContent = document.getElementById('mainContent');
+    const loginSection = document.getElementById('loginSection');
+    const userEmail = document.getElementById('userEmail');
+    const status = document.getElementById('status');
 
-        async function sendMessage() {
-            const userInput = document.getElementById('user-input');
-            const message = userInput.value.trim();
-            
-            if (!message) return;
+    document.getElementById('showLogin').addEventListener('click', () => {
+      authSection.style.display = 'none';
+      loginSection.style.display = 'block';
+    });
 
-            userInput.value = '';
-            addMessage(message, true);
+    // Teste de conexão com o banco de dados
+    const checkDatabaseConnection = async () => {
+      try {
+        const { data, error } = await supabase.from('users').select('*').limit(1);
+        if (error) throw error;
+        status.textContent = 'Conexão bem-sucedida!';
+        status.style.backgroundColor = '#4CAF50'; // Verde
+      } catch (err) {
+        status.textContent = 'Falha na conexão!';
+        status.style.backgroundColor = '#f44336'; // Vermelho
+      }
+    };
 
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        messages: [{ role: 'user', content: message }],
-                        model: 'gpt-3.5-turbo'
-                    })
-                });
+    checkDatabaseConnection();
 
-                const data = await response.json();
-                addMessage(data.choices[0].message.content, false);
-            } catch (error) {
-                addMessage('Desculpe, ocorreu um erro. Tente novamente.', false);
-            }
-        }
+    // Cadastro de usuário
+    document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('cadastroEmail').value;
+      const senha = document.getElementById('cadastroSenha').value;
+      
+      let { error } = await supabase.auth.signUp({ email, password: senha });
+      if (error) {
+        msg.textContent = 'Erro no cadastro: ' + error.message;
+      } else {
+        authSection.style.display = 'none';
+        loginSection.style.display = 'block';
+      }
+      this.reset();
+    });
 
-        document.getElementById('user-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-    </script>
+    // Login de usuário
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const senha = document.getElementById('loginSenha').value;
+      
+      let { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      if (error) {
+        msg.textContent = 'Erro no login: ' + error.message;
+      } else {
+        authSection.style.display = 'none';
+        mainContent.style.display = 'block';
+        userEmail.textContent = email;
+      }
+      this.reset();
+    });
+  </script>
 </body>
 </html>
