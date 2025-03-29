@@ -2,44 +2,114 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro e Login com Supabase</title>
   <style>
-    body { background-color: #121212; color: #ffffff; font-family: sans-serif; max-width: 400px; margin: auto; padding: 20px; }
-    form { margin-bottom: 20px; }
-    input { display: block; margin: 10px 0; padding: 8px; width: 100%; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; }
-    button { padding: 8px 16px; background-color: #6200ea; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: #3700b3; }
-    #mainContent { display: none; text-align: center; }
-    #loginSection { display: none; }
-    #status { position: fixed; bottom: 10px; right: 10px; background-color: #333; color: #fff; padding: 5px 10px; border-radius: 5px; }
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h2, h1 {
+      margin-bottom: 15px;
+    }
+    form {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background-color: #1e1e1e;
+      color: #ffffff;
+      border: 1px solid #333;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px;
+      background-color: #6200ea;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #3700b3;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      text-align: center;
+    }
+    #mainContent {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+    }
+    #msg {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .toggle-btn {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      color: #bbb;
+      text-decoration: underline;
+      font-size: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div id="authSection">
-    <h2>Cadastro</h2>
-    <form id="cadastroForm">
-      <input type="email" id="cadastroEmail" placeholder="Email" required>
-      <input type="password" id="cadastroSenha" placeholder="Senha" required>
-      <button type="submit">Criar Conta</button>
-    </form>
-    <button id="showLogin">Já tem uma conta? Faça login</button>
+  <div id="authSection" class="container">
+    <!-- Seção de Cadastro -->
+    <div id="cadastroSection">
+      <h2>Cadastro</h2>
+      <form id="cadastroForm">
+        <input type="email" id="cadastroEmail" placeholder="Email" required>
+        <input type="password" id="cadastroSenha" placeholder="Senha" required>
+        <button type="submit">Criar Conta</button>
+      </form>
+      <button id="btnGoLogin" class="toggle-btn">Já tem uma conta? Faça login</button>
+    </div>
 
-    <div id="loginSection">
+    <!-- Seção de Login -->
+    <div id="loginSection" style="display: none;">
       <h2>Login</h2>
       <form id="loginForm">
         <input type="email" id="loginEmail" placeholder="Email" required>
         <input type="password" id="loginSenha" placeholder="Senha" required>
         <button type="submit">Entrar</button>
       </form>
+      <button id="btnGoCadastro" class="toggle-btn">Não tem conta? Criar Conta</button>
     </div>
   </div>
 
-  <div id="mainContent">
+  <div id="mainContent" class="container">
     <h1>Bem-vindo, <span id="userEmail"></span>!</h1>
   </div>
 
-  <div id="msg"></div>
-  <div id="status">Conectando ao banco de dados...</div>
+  <div id="msg" class="container"></div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -48,31 +118,23 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmbHJxYWF6d3pybnpnaWlidXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyMDcxOTUsImV4cCI6MjA1ODc4MzE5NX0.EbHtOfrKZdd_0-q5DoqlWDusi_3aydmg1PENFypIcfE';
     const supabase = createClient(supabaseUrl, supabaseKey);
     const msg = document.getElementById('msg');
+    const cadastroSection = document.getElementById('cadastroSection');
+    const loginSection = document.getElementById('loginSection');
     const authSection = document.getElementById('authSection');
     const mainContent = document.getElementById('mainContent');
-    const loginSection = document.getElementById('loginSection');
     const userEmail = document.getElementById('userEmail');
-    const status = document.getElementById('status');
 
-    document.getElementById('showLogin').addEventListener('click', () => {
-      authSection.style.display = 'none';
+    // Alternar para a tela de login
+    document.getElementById('btnGoLogin').addEventListener('click', () => {
+      cadastroSection.style.display = 'none';
       loginSection.style.display = 'block';
     });
 
-    // Teste de conexão com o banco de dados
-    const checkDatabaseConnection = async () => {
-      try {
-        const { data, error } = await supabase.from('users').select('*').limit(1);
-        if (error) throw error;
-        status.textContent = 'Conexão bem-sucedida!';
-        status.style.backgroundColor = '#4CAF50'; // Verde
-      } catch (err) {
-        status.textContent = 'Falha na conexão!';
-        status.style.backgroundColor = '#f44336'; // Vermelho
-      }
-    };
-
-    checkDatabaseConnection();
+    // Alternar para a tela de cadastro
+    document.getElementById('btnGoCadastro').addEventListener('click', () => {
+      loginSection.style.display = 'none';
+      cadastroSection.style.display = 'block';
+    });
 
     // Cadastro de usuário
     document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
@@ -84,7 +146,8 @@
       if (error) {
         msg.textContent = 'Erro no cadastro: ' + error.message;
       } else {
-        authSection.style.display = 'none';
+        // Após cadastro, redireciona para a tela de login
+        cadastroSection.style.display = 'none';
         loginSection.style.display = 'block';
       }
       this.reset();
