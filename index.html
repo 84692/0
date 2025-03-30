@@ -19,7 +19,7 @@
     }
     h2, h1, h3 { margin-bottom: 15px; }
     form { width: 100%; max-width: 400px; margin-bottom: 20px; }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -65,10 +65,7 @@
       margin-left: 10px;
     }
     #deleteLoveLink:hover { color: red; }
-    #loveLinkCreateScreen, #loveLinkEditScreen, #loveLinkDisplay { display: none; margin-top: 20px; }
-    #loveLinkPhoto { max-width: 100%; border-radius: 5px; }
-    #loveLinkCaption { margin-top: 10px; font-size: 16px; }
-    #backToMain { margin-top: 20px; }
+    #loveLinkCreateScreen, #loveLinkEditScreen { display: none; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -77,7 +74,7 @@
     <div id="loginSection">
       <h2>Login</h2>
       <form id="loginForm">
-        <input type="email" id="loginEmail" placeholder="Email" required>
+        <input type="text" id="loginEmail" placeholder="Email" required>
         <input type="password" id="loginSenha" placeholder="Senha" required>
         <button type="submit">Entrar</button>
       </form>
@@ -109,6 +106,12 @@
     <div id="loveLinkCreateScreen" class="container">
       <h3>Criar Love Link</h3>
       <input type="text" id="createPageName" placeholder="Nome da Página" required>
+      <select id="createPhotoFormat">
+        <option value="square">Quadrado</option>
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
+      </select>
+      <input type="number" id="createPhotoSize" placeholder="Tamanho da Imagem (px)" value="300" min="100" max="1000">
       <input type="file" id="createPhoto" accept="image/*">
       <input type="text" id="createCaption" placeholder="Legenda da Foto">
       <button id="saveCreate">Salvar Love Link</button>
@@ -116,15 +119,15 @@
     <div id="loveLinkEditScreen" class="container">
       <h3>Editar Love Link</h3>
       <input type="text" id="editPageName" placeholder="Nome da Página" required>
+      <select id="editPhotoFormat">
+        <option value="square">Quadrado</option>
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
+      </select>
+      <input type="number" id="editPhotoSize" placeholder="Tamanho da Imagem (px)" value="300" min="100" max="1000">
       <input type="file" id="editPhoto" accept="image/*">
       <input type="text" id="editCaption" placeholder="Legenda da Foto">
       <button id="saveEdit">Salvar Alterações</button>
-    </div>
-    <div id="loveLinkDisplay" class="container">
-      <h3>Seu Love Link</h3>
-      <img id="loveLinkPhoto" alt="Foto do Love Link">
-      <p id="loveLinkCaption"></p>
-      <button id="backToMain">Voltar</button>
     </div>
   </div>
 
@@ -136,7 +139,7 @@
     const supabaseUrl = 'https://pegjlbpztozfoxzqwkhj.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2psYnB6dG96Zm94enF3a2hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNjExOTAsImV4cCI6MjA1ODkzNzE5MH0.l6Haxm0WMkD1Ts1b1fFyE-4LLsSn-9ovDlIkrEb2gS8';
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const imgurClientId = 'b234bda60e00570'; // Substitua pelo seu Client-ID do Imgur
+    const imgurClientId = 'b234bda60e00570'; // Sua chave Imgur
     const msg = document.getElementById('msg');
     const cadastroSection = document.getElementById('cadastroSection');
     const loginSection = document.getElementById('loginSection');
@@ -150,7 +153,6 @@
     const editLoveLink = document.getElementById('editLoveLink');
     const loveLinkCreateScreen = document.getElementById('loveLinkCreateScreen');
     const loveLinkEditScreen = document.getElementById('loveLinkEditScreen');
-    const loveLinkDisplay = document.getElementById('loveLinkDisplay');
     let currentLoveLink = null;
 
     // Função para fazer upload de imagem para o Imgur
@@ -249,7 +251,7 @@
         mainContent.style.display = 'block';
         const nomeUsuario = userData.user.user_metadata.nome || email;
         userNomeDisplay.textContent = nomeUsuario;
-        await checkLoveLink(); // Garantir que a verificação seja concluída
+        await checkLoveLink();
         msg.textContent = '';
         msg.className = '';
         this.reset();
@@ -259,7 +261,7 @@
       }
     });
 
-    // Verificar se o usuário já possui um Love Link
+    // Verificar se o usuário já possui um Love Link (para botões)
     async function checkLoveLink() {
       try {
         const user = await supabase.auth.getUser();
@@ -268,18 +270,17 @@
           .from('love_links')
           .select('*')
           .eq('user_id', userId)
-          .maybeSingle(); // Usar maybeSingle para lidar com caso de nenhum resultado
+          .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') { // Ignorar erro de "nenhum resultado"
+        if (error && error.code !== 'PGRST116') {
           throw error;
         }
 
-        if (loveLink) {
-          currentLoveLink = loveLink;
+        currentLoveLink = loveLink || null;
+        if (currentLoveLink) {
           btnCreateLoveLink.style.display = 'none';
           loveLinkActions.style.display = 'block';
         } else {
-          currentLoveLink = null;
           btnCreateLoveLink.style.display = 'block';
           loveLinkActions.style.display = 'none';
         }
@@ -299,6 +300,8 @@
       const user = await supabase.auth.getUser();
       const userId = user.data.user.id;
       const pageName = document.getElementById('createPageName').value;
+      const photoFormat = document.getElementById('createPhotoFormat').value;
+      const photoSize = document.getElementById('createPhotoSize').value;
       const photoFile = document.getElementById('createPhoto').files[0];
       const caption = document.getElementById('createCaption').value || '';
 
@@ -314,6 +317,8 @@
           user_id: userId,
           page_name: pageName,
           photo: photoUrl,
+          photo_format: photoFormat, // Novo campo: formato da foto
+          photo_size: parseInt(photoSize), // Novo campo: tamanho da foto em pixels
           caption: caption
         };
         const { data, error } = await supabase.from('love_links').insert([newLoveLink]).select().single();
@@ -330,30 +335,111 @@
       }
     });
 
-    // Abrir Love Link
+    // Abrir Love Link em uma nova aba
     openLoveLink.addEventListener('click', async () => {
-      if (!currentLoveLink) {
-        await checkLoveLink(); // Re-verificar antes de abrir
-      }
-      if (currentLoveLink && currentLoveLink.page_name) {
-        mainContent.style.display = 'none';
-        loveLinkDisplay.style.display = 'block';
-        document.getElementById('loveLinkPhoto').src = currentLoveLink.photo || 'https://via.placeholder.com/300x200?text=Sem+Foto';
-        document.getElementById('loveLinkCaption').textContent = currentLoveLink.caption || 'Sem legenda';
-      } else {
-        msg.textContent = 'Nenhum Love Link encontrado. Crie um primeiro!';
+      try {
+        const user = await supabase.auth.getUser();
+        const userId = user.data.user.id;
+        const { data: loveLink, error } = await supabase
+          .from('love_links')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        if (loveLink) {
+          const photoUrl = loveLink.photo || 'https://via.placeholder.com/300x200?text=Sem+Foto';
+          const caption = loveLink.caption || 'Sem legenda';
+          const pageName = loveLink.page_name;
+          const photoFormat = loveLink.photo_format || 'square'; // Padrão: quadrado
+          const photoSize = loveLink.photo_size || 300; // Padrão: 300px
+
+          // Definir estilo da imagem com base no formato
+          let photoStyle = '';
+          switch (photoFormat) {
+            case 'square':
+              photoStyle = `width: ${photoSize}px; height: ${photoSize}px; object-fit: cover;`;
+              break;
+            case 'horizontal':
+              photoStyle = `width: ${photoSize * 1.5}px; height: ${photoSize}px; object-fit: cover;`;
+              break;
+            case 'vertical':
+              photoStyle = `width: ${photoSize}px; height: ${photoSize * 1.5}px; object-fit: cover;`;
+              break;
+          }
+
+          // HTML da nova aba
+          const newPageHTML = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${pageName}</title>
+              <style>
+                body {
+                  background-color: #121212;
+                  color: #ffffff;
+                  font-family: sans-serif;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  min-height: 100vh;
+                  margin: 0;
+                  padding: 20px;
+                }
+                h1 {
+                  margin-bottom: 20px;
+                  font-size: 24px;
+                }
+                img {
+                  max-width: 100%;
+                  border-radius: 10px;
+                  margin-bottom: 20px;
+                  ${photoStyle}
+                }
+                p {
+                  font-size: 18px;
+                  text-align: center;
+                  max-width: 600px;
+                }
+              </style>
+            </head>
+            <body>
+              <h1>${pageName}</h1>
+              <img src="${photoUrl}" alt="Foto do Love Link">
+              <p>${caption}</p>
+            </body>
+            </html>
+          `;
+
+          // Abrir nova aba e escrever o HTML
+          const newWindow = window.open('', '_blank');
+          newWindow.document.write(newPageHTML);
+          newWindow.document.close();
+
+          currentLoveLink = loveLink; // Atualiza o estado para edição/exclusão
+        } else {
+          msg.textContent = 'Nenhum Love Link encontrado. Crie um primeiro!';
+          msg.className = 'error';
+        }
+      } catch (error) {
+        msg.textContent = 'Erro ao abrir Love Link: ' + error.message;
         msg.className = 'error';
       }
     });
 
-    // Voltar para a tela principal
-    document.getElementById('backToMain').addEventListener('click', () => {
-      loveLinkDisplay.style.display = 'none';
-      mainContent.style.display = 'block';
-    });
-
     // Excluir Love Link
     deleteLoveLink.addEventListener('click', async () => {
+      if (!currentLoveLink) {
+        msg.textContent = 'Nenhum Love Link para excluir.';
+        msg.className = 'error';
+        return;
+      }
       if (confirm('Tem certeza que deseja excluir o Love Link?')) {
         const { error } = await supabase.from('love_links').delete().eq('id', currentLoveLink.id);
         if (error) {
@@ -373,6 +459,8 @@
       if (currentLoveLink) {
         loveLinkEditScreen.style.display = 'block';
         document.getElementById('editPageName').value = currentLoveLink.page_name;
+        document.getElementById('editPhotoFormat').value = currentLoveLink.photo_format || 'square';
+        document.getElementById('editPhotoSize').value = currentLoveLink.photo_size || 300;
         document.getElementById('editCaption').value = currentLoveLink.caption || '';
       } else {
         msg.textContent = 'Nenhum Love Link para editar.';
@@ -383,6 +471,8 @@
     // Salvar alterações do Love Link
     document.getElementById('saveEdit').addEventListener('click', async () => {
       const pageName = document.getElementById('editPageName').value;
+      const photoFormat = document.getElementById('editPhotoFormat').value;
+      const photoSize = document.getElementById('editPhotoSize').value;
       const photoFile = document.getElementById('editPhoto').files[0];
       const caption = document.getElementById('editCaption').value || '';
 
@@ -400,6 +490,8 @@
         const updatedData = {
           page_name: pageName,
           photo: photoUrl,
+          photo_format: photoFormat,
+          photo_size: parseInt(photoSize),
           caption: caption
         };
         const { error } = await supabase.from('love_links').update(updatedData).eq('id', currentLoveLink.id);
