@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste de banco de dados</title>
+  <title>Cadastro e Login com Supabase</title>
   <style>
     /* Reset básico e estilo responsivo para mobile */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,6 +45,8 @@
     .container { width: 100%; max-width: 400px; margin: auto; text-align: center; }
     #mainContent { display: none; text-align: center; margin-top: 30px; }
     #msg { margin-top: 10px; font-size: 14px; }
+    #msg.error { color: #ff4d4d; }
+    #msg.success { color: #4dff4d; }
     .toggle-btn {
       margin-top: 10px;
       background: none;
@@ -54,7 +56,6 @@
       font-size: 14px;
       cursor: pointer;
     }
-    /* Estilo para a lista de usuários */
     #userList {
       margin-top: 10px;
       display: flex;
@@ -71,28 +72,27 @@
 </head>
 <body>
   <div id="authSection" class="container">
-    <!-- Seção de Cadastro -->
-    <div id="cadastroSection">
-      <h2>Cadastro</h2>
-      <form id="cadastroForm">
-        <!-- Novo campo para Nome -->
-        <input type="text" id="cadastroNome" placeholder="Nome" required>
-        <input type="email" id="cadastroEmail" placeholder="Email" required>
-        <input type="password" id="cadastroSenha" placeholder="Senha" required>
-        <button type="submit">Criar Conta</button>
-      </form>
-      <button id="btnGoLogin" class="toggle-btn">Já tem uma conta? Faça login</button>
-    </div>
-
     <!-- Seção de Login -->
-    <div id="loginSection" style="display: none;">
+    <div id="loginSection">
       <h2>Login</h2>
       <form id="loginForm">
         <input type="email" id="loginEmail" placeholder="Email" required>
         <input type="password" id="loginSenha" placeholder="Senha" required>
         <button type="submit">Entrar</button>
       </form>
-      <button id="btnGoCadastro" class="toggle-btn">Não tem conta? Criar Conta</button>
+      <button id="btnGoCadastro" class="toggle-btn">Não tem conta? Se cadastre</button>
+    </div>
+
+    <!-- Seção de Cadastro -->
+    <div id="cadastroSection" style="display: none;">
+      <h2>Cadastro</h2>
+      <form id="cadastroForm">
+        <input type="text" id="cadastroNome" placeholder="Nome" required>
+        <input type="email" id="cadastroEmail" placeholder="Email" required>
+        <input type="password" id="cadastroSenha" placeholder="Senha" required>
+        <button type="submit">Criar Conta</button>
+      </form>
+      <button id="btnGoLogin" class="toggle-btn">Já tem uma conta? Faça login</button>
     </div>
   </div>
 
@@ -118,38 +118,21 @@
     const userNomeDisplay = document.getElementById('userNome');
     const userList = document.getElementById('userList');
 
-    // Alternar para a tela de login
-    document.getElementById('btnGoLogin').addEventListener('click', () => {
-      cadastroSection.style.display = 'none';
-      loginSection.style.display = 'block';
-      msg.textContent = ''; // Limpa mensagens
-    });
-
     // Alternar para a tela de cadastro
     document.getElementById('btnGoCadastro').addEventListener('click', () => {
       loginSection.style.display = 'none';
       cadastroSection.style.display = 'block';
-      msg.textContent = ''; // Limpa mensagens
+      msg.textContent = '';
+      msg.className = '';
     });
 
-    // Função para gerar cor aleatória
-    const getRandomColor = () => {
-      const letters = '0123456789ABCDEF';
-      let color = '#';
-      for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-      }
-      return color;
-    };
-
-    // Função para embaralhar um array
-    const shuffleArray = (array) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
+    // Alternar para a tela de login
+    document.getElementById('btnGoLogin').addEventListener('click', () => {
+      cadastroSection.style.display = 'none';
+      loginSection.style.display = 'block';
+      msg.textContent = '';
+      msg.className = '';
+    });
 
     // Cadastro de usuário
     document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
@@ -158,7 +141,12 @@
       const email = document.getElementById('cadastroEmail').value;
       const senha = document.getElementById('cadastroSenha').value;
       
-      // Realiza o cadastro com metadados para salvar o nome
+      if (senha.length < 6) {
+        msg.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+        msg.className = 'error';
+        return;
+      }
+      
       let { data, error } = await supabase.auth.signUp({ 
         email, 
         password: senha, 
@@ -167,16 +155,21 @@
       
       if (error) {
         msg.textContent = 'Erro no cadastro: ' + error.message;
+        msg.className = 'error';
       } else {
-        // Insere o perfil na tabela "profiles" para posterior listagem
         const user = data.user;
-        await supabase.from('profiles').insert([{ id: user.id, nome, email }]);
-        // Após cadastro, redireciona para a tela de login
-        cadastroSection.style.display = 'none';
-        loginSection.style.display = 'block';
-        msg.textContent = '';
+        const { error: profileError } = await supabase.from('profiles').insert([{ id: user.id, nome }]);
+        if (profileError) {
+          msg.textContent = 'Erro ao criar perfil: ' + profileError.message;
+          msg.className = 'error';
+        } else {
+          msg.textContent = 'Cadastro realizado com sucesso! Faça login.';
+          msg.className = 'success';
+          cadastroSection.style.display = 'none';
+          loginSection.style.display = 'block';
+          this.reset();
+        }
       }
-      this.reset();
     });
 
     // Login de usuário
@@ -188,39 +181,50 @@
       let { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) {
         msg.textContent = 'Erro no login: ' + error.message;
+        msg.className = 'error';
       } else {
         authSection.style.display = 'none';
         mainContent.style.display = 'block';
-        // Obter os dados do usuário logado, incluindo o nome dos metadados
         const { data: userData } = await supabase.auth.getUser();
         const nomeUsuario = userData.user.user_metadata.nome || email;
         userNomeDisplay.textContent = nomeUsuario;
-        // Carregar e exibir a lista de usuários cadastrados
         loadUserList();
         msg.textContent = '';
+        msg.className = '';
+        this.reset();
       }
-      this.reset();
     });
 
     // Função para carregar e exibir a lista de nomes dos usuários cadastrados
     const loadUserList = async () => {
-      let { data: profiles, error } = await supabase.from('profiles').select('nome');
+      let { data: profiles, error } = await supabase.from('profiles').select('nome').order('nome', { ascending: true });
       if (error) {
         msg.textContent = 'Erro ao carregar usuários: ' + error.message;
+        msg.className = 'error';
         return;
       }
-      // Extrai somente os nomes e embaralha a lista
-      let nomes = profiles.map(p => p.nome);
-      nomes = shuffleArray(nomes);
-      // Exibe cada nome com uma cor aleatória
       userList.innerHTML = '';
-      nomes.forEach(nome => {
+      profiles.forEach(profile => {
         const span = document.createElement('span');
-        span.textContent = nome;
+        span.textContent = profile.nome;
         span.className = 'userItem';
-        span.style.backgroundColor = getRandomColor();
+        span.style.backgroundColor = stringToColor(profile.nome);
         userList.appendChild(span);
       });
+    };
+
+    // Função para gerar cor fixa baseada no nome
+    const stringToColor = (str) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      let color = '#';
+      for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        color += ('00' + value.toString(16)).substr(-2);
+      }
+      return color;
     };
   </script>
 </body>
