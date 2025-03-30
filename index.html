@@ -19,7 +19,7 @@
     }
     h2, h1, h3 { margin-bottom: 15px; }
     form { width: 100%; max-width: 400px; margin-bottom: 20px; }
-    input {
+    input, textarea {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -56,18 +56,19 @@
       font-size: 14px;
       cursor: pointer;
     }
-    #userList {
-      margin-top: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
+    #loveLinkActions { margin-top: 20px; }
+    #deleteLoveLink {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      margin-left: 10px;
     }
-    .userItem {
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-weight: bold;
-    }
+    #deleteLoveLink:hover { color: red; }
+    #loveLinkCreateScreen, #loveLinkEditScreen, #loveLinkDisplay { display: none; margin-top: 20px; }
+    #loveLinkPhoto { max-width: 100%; border-radius: 5px; }
+    #loveLinkCaption { margin-top: 10px; font-size: 16px; }
+    #backToMain { margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -98,8 +99,33 @@
 
   <div id="mainContent" class="container">
     <h1>Bem-vindo, <span id="userNome"></span>!</h1>
-    <h3>Usuários cadastrados:</h3>
-    <div id="userList"></div>
+    <button id="btnCreateLoveLink" style="display: none;">Criar Love Link</button>
+    <div id="loveLinkActions" style="display: none;">
+      <button id="openLoveLink">Abrir Love Link</button>
+      <button id="deleteLoveLink" title="Excluir Love Link">🗑️</button>
+      <br>
+      <button id="editLoveLink">Editar Love Link</button>
+    </div>
+    <div id="loveLinkCreateScreen" class="container">
+      <h3>Criar Love Link</h3>
+      <input type="text" id="createPageName" placeholder="Nome da Página" required>
+      <input type="file" id="createPhoto" accept="image/*">
+      <input type="text" id="createCaption" placeholder="Legenda da Foto">
+      <button id="saveCreate">Salvar Love Link</button>
+    </div>
+    <div id="loveLinkEditScreen" class="container">
+      <h3>Editar Love Link</h3>
+      <input type="text" id="editPageName" placeholder="Nome da Página" required>
+      <input type="file" id="editPhoto" accept="image/*">
+      <input type="text" id="editCaption" placeholder="Legenda da Foto">
+      <button id="saveEdit">Salvar Alterações</button>
+    </div>
+    <div id="loveLinkDisplay" class="container">
+      <h3>Seu Love Link</h3>
+      <img id="loveLinkPhoto" alt="Foto do Love Link">
+      <p id="loveLinkCaption"></p>
+      <button id="backToMain">Voltar</button>
+    </div>
   </div>
 
   <div id="msg" class="container"></div>
@@ -107,16 +133,49 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-    const supabaseUrl = 'https://jflrqaazwzrnzgiibusv.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmbHJxYWF6d3pybnpnaWlidXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyMDcxOTUsImV4cCI6MjA1ODc4MzE5NX0.EbHtOfrKZdd_0-q5DoqlWDusi_3aydmg1PENFypIcfE';
+    const supabaseUrl = 'https://pegjlbpztozfoxzqwkhj.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2psYnB6dG96Zm94enF3a2hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNjExOTAsImV4cCI6MjA1ODkzNzE5MH0.l6Haxm0WMkD1Ts1b1fFyE-4LLsSn-9ovDlIkrEb2gS8';
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const imgurClientId = 'YOUR_IMGUR_API_KEY'; // Substitua pelo seu Client-ID do Imgur
     const msg = document.getElementById('msg');
     const cadastroSection = document.getElementById('cadastroSection');
     const loginSection = document.getElementById('loginSection');
     const authSection = document.getElementById('authSection');
     const mainContent = document.getElementById('mainContent');
     const userNomeDisplay = document.getElementById('userNome');
-    const userList = document.getElementById('userList');
+    const btnCreateLoveLink = document.getElementById('btnCreateLoveLink');
+    const loveLinkActions = document.getElementById('loveLinkActions');
+    const openLoveLink = document.getElementById('openLoveLink');
+    const deleteLoveLink = document.getElementById('deleteLoveLink');
+    const editLoveLink = document.getElementById('editLoveLink');
+    const loveLinkCreateScreen = document.getElementById('loveLinkCreateScreen');
+    const loveLinkEditScreen = document.getElementById('loveLinkEditScreen');
+    const loveLinkDisplay = document.getElementById('loveLinkDisplay');
+    let currentLoveLink = null;
+
+    // Função para fazer upload de imagem para o Imgur
+    async function uploadImageToImgur(file) {
+      if (!file) return null;
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const response = await fetch('https://api.imgur.com/3/image', {
+          method: 'POST',
+          headers: {
+            Authorization: `Client-ID ${imgurClientId}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Erro ao fazer upload da imagem para o Imgur');
+        const data = await response.json();
+        if (data.status !== 200) throw new Error('Erro no status da resposta do Imgur');
+        return data.data.link;
+      } catch (error) {
+        throw new Error('Erro no upload: ' + error.message);
+      }
+    }
 
     // Alternar para a tela de cadastro
     document.getElementById('btnGoCadastro').addEventListener('click', () => {
@@ -140,35 +199,35 @@
       const nome = document.getElementById('cadastroNome').value;
       const email = document.getElementById('cadastroEmail').value;
       const senha = document.getElementById('cadastroSenha').value;
-      
+
       if (senha.length < 6) {
         msg.textContent = 'A senha deve ter pelo menos 6 caracteres.';
         msg.className = 'error';
         return;
       }
-      
-      let { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password: senha, 
-        options: { data: { nome } } 
-      });
-      
-      if (error) {
+
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: senha,
+          options: { data: { nome } }
+        });
+
+        if (error) throw error;
+
+        const user = data.user;
+        const { error: profileError } = await supabase.from('profiles').insert([{ id: user.id, nome, email }]);
+
+        if (profileError) throw profileError;
+
+        msg.textContent = 'Cadastro realizado com sucesso! Faça login.';
+        msg.className = 'success';
+        cadastroSection.style.display = 'none';
+        loginSection.style.display = 'block';
+        this.reset();
+      } catch (error) {
         msg.textContent = 'Erro no cadastro: ' + error.message;
         msg.className = 'error';
-      } else {
-        const user = data.user;
-        const { error: profileError } = await supabase.from('profiles').insert([{ id: user.id, nome }]);
-        if (profileError) {
-          msg.textContent = 'Erro ao criar perfil: ' + profileError.message;
-          msg.className = 'error';
-        } else {
-          msg.textContent = 'Cadastro realizado com sucesso! Faça login.';
-          msg.className = 'success';
-          cadastroSection.style.display = 'none';
-          loginSection.style.display = 'block';
-          this.reset();
-        }
       }
     });
 
@@ -177,55 +236,184 @@
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
       const senha = document.getElementById('loginSenha').value;
-      
-      let { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
-      if (error) {
-        msg.textContent = 'Erro no login: ' + error.message;
-        msg.className = 'error';
-      } else {
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+
+        if (error) throw error;
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
         authSection.style.display = 'none';
         mainContent.style.display = 'block';
-        const { data: userData } = await supabase.auth.getUser();
         const nomeUsuario = userData.user.user_metadata.nome || email;
         userNomeDisplay.textContent = nomeUsuario;
-        loadUserList();
+        await checkLoveLink(); // Garantir que a verificação seja concluída
         msg.textContent = '';
         msg.className = '';
         this.reset();
+      } catch (error) {
+        msg.textContent = 'Erro no login: ' + error.message;
+        msg.className = 'error';
       }
     });
 
-    // Função para carregar e exibir a lista de nomes dos usuários cadastrados
-    const loadUserList = async () => {
-      let { data: profiles, error } = await supabase.from('profiles').select('nome').order('nome', { ascending: true });
-      if (error) {
-        msg.textContent = 'Erro ao carregar usuários: ' + error.message;
+    // Verificar se o usuário já possui um Love Link
+    async function checkLoveLink() {
+      try {
+        const user = await supabase.auth.getUser();
+        const userId = user.data.user.id;
+        const { data: loveLink, error } = await supabase
+          .from('love_links')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle(); // Usar maybeSingle para lidar com caso de nenhum resultado
+
+        if (error && error.code !== 'PGRST116') { // Ignorar erro de "nenhum resultado"
+          throw error;
+        }
+
+        if (loveLink) {
+          currentLoveLink = loveLink;
+          btnCreateLoveLink.style.display = 'none';
+          loveLinkActions.style.display = 'block';
+        } else {
+          currentLoveLink = null;
+          btnCreateLoveLink.style.display = 'block';
+          loveLinkActions.style.display = 'none';
+        }
+      } catch (error) {
+        msg.textContent = 'Erro ao verificar Love Link: ' + error.message;
+        msg.className = 'error';
+      }
+    }
+
+    // Criar Love Link
+    btnCreateLoveLink.addEventListener('click', () => {
+      loveLinkCreateScreen.style.display = 'block';
+    });
+
+    // Salvar novo Love Link
+    document.getElementById('saveCreate').addEventListener('click', async () => {
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user.id;
+      const pageName = document.getElementById('createPageName').value;
+      const photoFile = document.getElementById('createPhoto').files[0];
+      const caption = document.getElementById('createCaption').value || '';
+
+      if (!pageName) {
+        msg.textContent = 'O nome da página é obrigatório.';
         msg.className = 'error';
         return;
       }
-      userList.innerHTML = '';
-      profiles.forEach(profile => {
-        const span = document.createElement('span');
-        span.textContent = profile.nome;
-        span.className = 'userItem';
-        span.style.backgroundColor = stringToColor(profile.nome);
-        userList.appendChild(span);
-      });
-    };
 
-    // Função para gerar cor fixa baseada no nome
-    const stringToColor = (str) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      try {
+        const photoUrl = await uploadImageToImgur(photoFile);
+        const newLoveLink = {
+          user_id: userId,
+          page_name: pageName,
+          photo: photoUrl,
+          caption: caption
+        };
+        const { data, error } = await supabase.from('love_links').insert([newLoveLink]).select().single();
+        if (error) throw error;
+
+        currentLoveLink = data;
+        msg.textContent = 'Love Link criado com sucesso!';
+        msg.className = 'success';
+        loveLinkCreateScreen.style.display = 'none';
+        await checkLoveLink();
+      } catch (error) {
+        msg.textContent = 'Erro ao criar Love Link: ' + error.message;
+        msg.className = 'error';
       }
-      let color = '#';
-      for (let i = 0; i < 3; i++) {
-        const value = (hash >> (i * 8)) & 0xFF;
-        color += ('00' + value.toString(16)).substr(-2);
+    });
+
+    // Abrir Love Link
+    openLoveLink.addEventListener('click', async () => {
+      if (!currentLoveLink) {
+        await checkLoveLink(); // Re-verificar antes de abrir
       }
-      return color;
-    };
+      if (currentLoveLink && currentLoveLink.page_name) {
+        mainContent.style.display = 'none';
+        loveLinkDisplay.style.display = 'block';
+        document.getElementById('loveLinkPhoto').src = currentLoveLink.photo || 'https://via.placeholder.com/300x200?text=Sem+Foto';
+        document.getElementById('loveLinkCaption').textContent = currentLoveLink.caption || 'Sem legenda';
+      } else {
+        msg.textContent = 'Nenhum Love Link encontrado. Crie um primeiro!';
+        msg.className = 'error';
+      }
+    });
+
+    // Voltar para a tela principal
+    document.getElementById('backToMain').addEventListener('click', () => {
+      loveLinkDisplay.style.display = 'none';
+      mainContent.style.display = 'block';
+    });
+
+    // Excluir Love Link
+    deleteLoveLink.addEventListener('click', async () => {
+      if (confirm('Tem certeza que deseja excluir o Love Link?')) {
+        const { error } = await supabase.from('love_links').delete().eq('id', currentLoveLink.id);
+        if (error) {
+          msg.textContent = 'Erro ao excluir Love Link: ' + error.message;
+          msg.className = 'error';
+        } else {
+          msg.textContent = 'Love Link excluído com sucesso!';
+          msg.className = 'success';
+          currentLoveLink = null;
+          await checkLoveLink();
+        }
+      }
+    });
+
+    // Editar Love Link
+    editLoveLink.addEventListener('click', () => {
+      if (currentLoveLink) {
+        loveLinkEditScreen.style.display = 'block';
+        document.getElementById('editPageName').value = currentLoveLink.page_name;
+        document.getElementById('editCaption').value = currentLoveLink.caption || '';
+      } else {
+        msg.textContent = 'Nenhum Love Link para editar.';
+        msg.className = 'error';
+      }
+    });
+
+    // Salvar alterações do Love Link
+    document.getElementById('saveEdit').addEventListener('click', async () => {
+      const pageName = document.getElementById('editPageName').value;
+      const photoFile = document.getElementById('editPhoto').files[0];
+      const caption = document.getElementById('editCaption').value || '';
+
+      if (!pageName) {
+        msg.textContent = 'O nome da página é obrigatório.';
+        msg.className = 'error';
+        return;
+      }
+
+      try {
+        let photoUrl = currentLoveLink.photo;
+        if (photoFile) {
+          photoUrl = await uploadImageToImgur(photoFile);
+        }
+        const updatedData = {
+          page_name: pageName,
+          photo: photoUrl,
+          caption: caption
+        };
+        const { error } = await supabase.from('love_links').update(updatedData).eq('id', currentLoveLink.id);
+        if (error) throw error;
+
+        msg.textContent = 'Love Link atualizado com sucesso!';
+        msg.className = 'success';
+        loveLinkEditScreen.style.display = 'none';
+        await checkLoveLink();
+      } catch (error) {
+        msg.textContent = 'Erro ao atualizar Love Link: ' + error.message;
+        msg.className = 'error';
+      }
+    });
   </script>
 </body>
 </html>
