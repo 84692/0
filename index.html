@@ -3,564 +3,584 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro e Login com Supabase</title>
+  <title>Love Links</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <style>
-    /* Reset básico e estilo responsivo para mobile */
+    /* Reset e estilos globais */
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary-color: #ff69b4; /* Rosa quente */
+      --secondary-color: #ff1493; /* Rosa mais escuro */
+      --background-color: #000000; /* Preto */
+      --text-color: #ffffff; /* Branco para contraste */
+      --success-color: #ff69b4; /* Rosa para sucesso */
+      --error-color: #ff4040; /* Vermelho suave para erros */
+    }
     body {
-      background-color: #121212;
-      color: #ffffff;
-      font-family: sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Arial', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 20px;
       min-height: 100vh;
+      transition: all 0.3s ease;
     }
-    h2, h1, h3 { margin-bottom: 15px; }
-    form { width: 100%; max-width: 400px; margin-bottom: 20px; }
-    input, textarea, select {
+    h1, h2, h3 { margin-bottom: 20px; font-weight: 600; }
+    
+    /* Estilos para formulários e containers */
+    .container {
+      width: 100%;
+      max-width: 450px;
+      background: #1a1a1a; /* Cinza escuro para contraste */
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+    }
+    .container:hover { transform: translateY(-5px); }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--primary-color);
+    }
+    input, select, textarea {
       width: 100%;
       padding: 12px;
-      margin: 10px 0;
-      background-color: #1e1e1e;
-      color: #ffffff;
-      border: 1px solid #333;
+      margin: 5px 0 10px 0;
+      border: 1px solid #ff69b4; /* Borda rosa */
       border-radius: 5px;
       font-size: 16px;
+      background: #333; /* Fundo escuro nos inputs */
+      color: var(--text-color);
+      transition: border-color 0.3s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--secondary-color);
+      outline: none;
     }
     button {
       width: 100%;
-      max-width: 400px;
       padding: 12px;
-      background-color: #6200ea;
-      color: #ffffff;
+      background-color: var(--primary-color);
+      color: #fff;
       border: none;
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, transform 0.2s ease;
     }
-    button:hover { background-color: #3700b3; }
-    .container { width: 100%; max-width: 400px; margin: auto; text-align: center; }
-    #mainContent { display: none; text-align: center; margin-top: 30px; }
-    #msg { margin-top: 10px; font-size: 14px; }
-    #msg.error { color: #ff4d4d; }
-    #msg.success { color: #4dff4d; }
-    .toggle-btn {
+    button:hover {
+      background-color: var(--secondary-color);
+      transform: scale(1.02);
+    }
+    
+    /* Estilo da logo */
+    .logo {
+      display: block;
+      margin: 20px auto; /* Espaçamento acima e abaixo */
+      width: 150px;
+      height: auto;
+    }
+    
+    /* Mensagens e animações */
+    .msg {
+      width: 100%;
+      max-width: 450px;
+      padding: 10px;
       margin-top: 10px;
+      border-radius: 5px;
+      text-align: center;
+      animation: fadeIn 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .msg.success { background-color: var(--success-color); color: #fff; }
+    .msg.error { background-color: var(--error-color); color: #fff; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 105, 180, 0.8); /* Rosa translúcido */
+      color: #fff;
+      padding: 15px 25px;
+      border-radius: 5px;
+      display: none;
+    }
+    
+    /* Botões de alternância e ações */
+    .toggle-btn {
       background: none;
       border: none;
-      color: #bbb;
-      text-decoration: underline;
+      color: var(--primary-color);
       font-size: 14px;
       cursor: pointer;
+      margin-top: 10px;
     }
     #loveLinkActions {
-  margin-top: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Espaço entre os botões */
-}
-#deleteLoveLink {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0;
-  width: 40px; /* Tamanho fixo para o botão da lixeira */
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#deleteLoveLink:hover {
-  color: red;
-}
-    #loveLinkCreateScreen, #loveLinkEditScreen { display: none; margin-top: 20px; }
-
-
-    .back-btn {
-  position: fixed;
-  bottom: 20px;
-  width: 50px;
-  height: 50px;
-  background-color: #6200ea;
-  color: #ffffff;
-  border: none;
-  border-radius: 50%;
-  font-size: 24px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
-}
-.back-btn:hover {
-  background-color: #3700b3;
-}
-
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #deleteLoveLink {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--error-color);
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+    #deleteLoveLink:hover { color: #ff6666; }
+    
+    /* Responsividade */
+    @media (max-width: 600px) {
+      .container { width: 90%; padding: 20px; }
+      .msg { width: 90%; }
+      .logo { width: 120px; margin: 15px auto; } /* Ajuste na logo para telas menores */
+      button, input, select, textarea { font-size: 14px; }
+      #loveLinkActions { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
+  <!-- Logo fora do container -->
+  <img src="https://pegjlbpztozfoxzqwkhj.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2031%20de%20mar.%20de%202025,%2021_24_41.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMzEgZGUgbWFyLiBkZSAyMDI1LCAyMV8yNF80MS5wbmciLCJpYXQiOjE3NDM0ODI3NDUsImV4cCI6NDg5NzA4Mjc0NX0.numugP-SKr3Fs2WREm5L66S7grNzW6JzchNWib6jua4" alt="Logo Love Links" class="logo" id="authLogo">
+  
+  <!-- Seção de Autenticação -->
   <div id="authSection" class="container">
-    <!-- Seção de Login -->
     <div id="loginSection">
-      <h2>Login</h2>
+      <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
       <form id="loginForm">
-        <input type="text" id="loginEmail" placeholder="Email" required>
-        <input type="password" id="loginSenha" placeholder="Senha" required>
-        <button type="submit">Entrar</button>
+        <label for="loginEmail">Email:</label>
+        <input type="email" id="loginEmail" placeholder="Digite seu email" required>
+        <label for="loginSenha">Senha:</label>
+        <input type="password" id="loginSenha" placeholder="Digite sua senha" required>
+        <button type="submit"><i class="fas fa-lock"></i> Entrar</button>
       </form>
-      <button id="btnGoCadastro" class="toggle-btn">Não tem conta? Se cadastre</button>
+      <button id="btnGoCadastro" class="toggle-btn">Criar uma conta</button>
     </div>
-
-    <!-- Seção de Cadastro -->
     <div id="cadastroSection" style="display: none;">
-      <h2>Cadastro</h2>
+      <h2><i class="fas fa-user-plus"></i> Cadastro</h2>
       <form id="cadastroForm">
-        <input type="text" id="cadastroNome" placeholder="Nome" required>
-        <input type="email" id="cadastroEmail" placeholder="Email" required>
-        <input type="password" id="cadastroSenha" placeholder="Senha" required>
-        <button type="submit">Criar Conta</button>
+        <label for="cadastroNome">Nome:</label>
+        <input type="text" id="cadastroNome" placeholder="Digite seu nome" required>
+        <label for="cadastroEmail">Email:</label>
+        <input type="email" id="cadastroEmail" placeholder="Digite seu email" required>
+        <label for="cadastroSenha">Senha:</label>
+        <input type="password" id="cadastroSenha" placeholder="Mín. 6 caracteres" required>
+        <button type="submit"><i class="fas fa-user-check"></i> Criar Conta</button>
       </form>
-      <button id="btnGoLogin" class="toggle-btn">Já tem uma conta? Faça login</button>
+      <button id="btnGoLogin" class="toggle-btn">Já tem conta? Faça login</button>
     </div>
   </div>
 
-  <div id="mainContent" class="container">
-    <h1>Bem-vindo, <span id="userNome"></span>!</h1>
-    <button id="btnCreateLoveLink" style="display: none;">Criar Love Link</button>
+  <!-- Logo para a tela principal (inicialmente escondido) -->
+  <img src="https://pegjlbpztozfoxzqwkhj.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2031%20de%20mar.%20de%202025,%2021_24_41.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMzEgZGUgbWFyLiBkZSAyMDI1LCAyMV8yNF80MS5wbmciLCJpYXQiOjE3NDM0ODI3NDUsImV4cCI6NDg5NzA4Mjc0NX0.numugP-SKr3Fs2WREm5L66S7grNzW6JzchNWib6jua4" alt="Logo Love Links" class="logo" id="mainLogo" style="display: none;">
+
+  <!-- Conteúdo Principal -->
+  <div id="mainContent" class="container" style="display: none;">
+    <h1>Bem-vindo, <span id="userNome"></span>! <i class="fas fa-heart"></i></h1>
+    <button id="btnCreateLoveLink" style="display: none;"><i class="fas fa-plus"></i> Criar Love Link</button>
     <div id="loveLinkActions" style="display: none;">
-  <button id="openLoveLink">Abrir Love Link</button>
-  <button id="deleteLoveLink" title="Excluir Love Link">🗑️</button>
-  <button id="editLoveLink">Editar Love Link</button>
-</div>
-    <div id="loveLinkCreateScreen" class="container">
-      <h3>Criar Love Link</h3>
-      <a href="javascript:window.opener.location.reload();window.close();" class="back-btn">←</a>
-      <input type="text" id="createPageName" placeholder="Nome da Página" required>
+      <button id="openLoveLink"><i class="fas fa-eye"></i> Ver Love Link</button>
+      <button id="editLoveLink"><i class="fas fa-edit"></i> Editar</button>
+      <button id="deleteLoveLink" title="Excluir Love Link"><i class="fas fa-trash"></i></button>
+    </div>
+
+    <!-- Tela de Criação -->
+    <div id="loveLinkCreateScreen" class="container" style="display: none;">
+      <h3><i class="fas fa-heartbeat"></i> Criar Love Link</h3>
+      <label for="createPageName">Nome da Página:</label>
+      <input type="text" id="createPageName" placeholder="Digite o nome da página" required>
+      <label for="createPhotoFormat">Formato da Foto:</label>
       <select id="createPhotoFormat">
         <option value="square">Quadrado</option>
         <option value="horizontal">Horizontal</option>
         <option value="vertical">Vertical</option>
       </select>
-      <input type="number" id="createPhotoSize" placeholder="Tamanho da Imagem (px)" value="300" min="100" max="1000">
+      <label for="createPhotoSize">Tamanho da Foto (px):</label>
+      <input type="number" id="createPhotoSize" placeholder="Tamanho em pixels" value="300" min="100" max="1000">
+      <label for="createBackgroundColor">Cor de Fundo:</label>
+      <input type="color" id="createBackgroundColor" value="#ffcad4">
+      <label for="createFontFamily">Fonte do Texto:</label>
+      <select id="createFontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="Courier New, monospace">Courier New</option>
+      </select>
+      <label for="createPhoto">Foto:</label>
       <input type="file" id="createPhoto" accept="image/*">
-      <input type="text" id="createCaption" placeholder="Legenda da Foto">
-      <button id="saveCreate">Salvar Love Link</button>
+      <label for="createCaption">Legenda:</label>
+      <textarea id="createCaption" placeholder="Digite uma legenda (opcional)" rows="3"></textarea>
+      <button id="saveCreate"><i class="fas fa-save"></i> Salvar</button>
     </div>
-    <div id="loveLinkEditScreen" class="container">
-      <h3>Editar Love Link</h3>
-      <input type="text" id="editPageName" placeholder="Nome da Página" required>
+
+    <!-- Tela de Edição -->
+    <div id="loveLinkEditScreen" class="container" style="display: none;">
+      <h3><i class="fas fa-edit"></i> Editar Love Link</h3>
+      <label for="editPageName">Nome da Página:</label>
+      <input type="text" id="editPageName" placeholder="Digite o nome da página" required>
+      <label for="editPhotoFormat">Formato da Foto:</label>
       <select id="editPhotoFormat">
         <option value="square">Quadrado</option>
         <option value="horizontal">Horizontal</option>
         <option value="vertical">Vertical</option>
       </select>
-      <input type="number" id="editPhotoSize" placeholder="Tamanho da Imagem (px)" value="300" min="100" max="1000">
+      <label for="editPhotoSize">Tamanho da Foto (px):</label>
+      <input type="number" id="editPhotoSize" placeholder="Tamanho em pixels" value="300" min="100" max="1000">
+      <label for="editBackgroundColor">Cor de Fundo:</label>
+      <input type="color" id="editBackgroundColor" value="#ffcad4">
+      <label for="editFontFamily">Fonte do Texto:</label>
+      <select id="editFontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="Courier New, monospace">Courier New</option>
+      </select>
+      <label for="editPhoto">Foto:</label>
       <input type="file" id="editPhoto" accept="image/*">
-      <input type="text" id="editCaption" placeholder="Legenda da Foto">
-      <button id="saveEdit">Salvar Alterações</button>
+      <label for="editCaption">Legenda:</label>
+      <textarea id="editCaption" placeholder="Digite uma legenda (opcional)" rows="3"></textarea>
+      <button id="saveEdit"><i class="fas fa-save"></i> Salvar Alterações</button>
     </div>
   </div>
 
-  <div id="msg" class="container"></div>
+  <div id="msg" class="msg"></div>
+  <div id="loading">Carregando...</div>
 
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
     const supabaseUrl = 'https://pegjlbpztozfoxzqwkhj.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2psYnB6dG96Zm94enF3a2hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNjExOTAsImV4cCI6MjA1ODkzNzE5MH0.l6Haxm0WMkD1Ts1b1fFyE-4LLsSn-9ovDlIkrEb2gS8';
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const imgurClientId = 'b234bda60e00570'; // Sua chave Imgur
+
     const msg = document.getElementById('msg');
-    const cadastroSection = document.getElementById('cadastroSection');
-    const loginSection = document.getElementById('loginSection');
+    const loading = document.getElementById('loading');
     const authSection = document.getElementById('authSection');
     const mainContent = document.getElementById('mainContent');
     const userNomeDisplay = document.getElementById('userNome');
     const btnCreateLoveLink = document.getElementById('btnCreateLoveLink');
     const loveLinkActions = document.getElementById('loveLinkActions');
-    const openLoveLink = document.getElementById('openLoveLink');
-    const deleteLoveLink = document.getElementById('deleteLoveLink');
-    const editLoveLink = document.getElementById('editLoveLink');
-    const loveLinkCreateScreen = document.getElementById('loveLinkCreateScreen');
-    const loveLinkEditScreen = document.getElementById('loveLinkEditScreen');
+    const authLogo = document.getElementById('authLogo');
+    const mainLogo = document.getElementById('mainLogo');
     let currentLoveLink = null;
 
-    // Função para fazer upload de imagem para o Imgur
-    async function uploadImageToImgur(file) {
-      if (!file) return null;
-      const formData = new FormData();
-      formData.append('image', file);
-
-      try {
-        const response = await fetch('https://api.imgur.com/3/image', {
-          method: 'POST',
-          headers: {
-            Authorization: `Client-ID ${imgurClientId}`
-          },
-          body: formData
-        });
-
-        if (!response.ok) throw new Error('Erro ao fazer upload da imagem para o Imgur');
-        const data = await response.json();
-        if (data.status !== 200) throw new Error('Erro no status da resposta do Imgur');
-        return data.data.link;
-      } catch (error) {
-        throw new Error('Erro no upload: ' + error.message);
-      }
+    // Funções auxiliares
+    function showMessage(text, type) {
+      msg.textContent = text;
+      msg.classList.add('msg', type);
+      setTimeout(() => {
+        msg.classList.remove('msg', type);
+        msg.textContent = '';
+      }, 3000);
     }
 
-    // Alternar para a tela de cadastro
+    function showLoading(show) {
+      loading.style.display = show ? 'block' : 'none';
+    }
+
+    async function uploadImageToSupabase(file) {
+      if (!file) return null;
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const base64Data = reader.result;
+            resolve(base64Data);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function getImageForLoveLink(loveLinkId) {
+      const { data, error } = await supabase
+        .from('images')
+        .select('image_data')
+        .eq('love_link_id', loveLinkId)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data ? data.image_data : null;
+    }
+
+    // Alternância entre login e cadastro
     document.getElementById('btnGoCadastro').addEventListener('click', () => {
-      loginSection.style.display = 'none';
-      cadastroSection.style.display = 'block';
-      msg.textContent = '';
-      msg.className = '';
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('cadastroSection').style.display = 'block';
     });
-
-    // Alternar para a tela de login
     document.getElementById('btnGoLogin').addEventListener('click', () => {
-      cadastroSection.style.display = 'none';
-      loginSection.style.display = 'block';
-      msg.textContent = '';
-      msg.className = '';
+      document.getElementById('cadastroSection').style.display = 'none';
+      document.getElementById('loginSection').style.display = 'block';
     });
 
-    // Cadastro de usuário
-    document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+    // Cadastro
+    document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = document.getElementById('cadastroNome').value;
       const email = document.getElementById('cadastroEmail').value;
       const senha = document.getElementById('cadastroSenha').value;
 
       if (senha.length < 6) {
-        msg.textContent = 'A senha deve ter pelo menos 6 caracteres.';
-        msg.className = 'error';
+        showMessage('A senha deve ter pelo menos 6 caracteres.', 'error');
         return;
       }
 
       try {
+        showLoading(true);
         const { data, error } = await supabase.auth.signUp({
           email,
           password: senha,
           options: { data: { nome } }
         });
-
         if (error) throw error;
 
-        const user = data.user;
-        const { error: profileError } = await supabase.from('profiles').insert([{ id: user.id, nome, email }]);
-
-        if (profileError) throw profileError;
-
-        msg.textContent = 'Cadastro realizado com sucesso! Faça login.';
-        msg.className = 'success';
-        cadastroSection.style.display = 'none';
-        loginSection.style.display = 'block';
-        this.reset();
+        await supabase.from('profiles').insert([{ id: data.user.id, nome, email }]);
+        showMessage('Cadastro realizado! Faça login.', 'success');
+        document.getElementById('cadastroSection').style.display = 'none';
+        document.getElementById('loginSection').style.display = 'block';
+        e.target.reset();
       } catch (error) {
-        msg.textContent = 'Erro no cadastro: ' + error.message;
-        msg.className = 'error';
+        showMessage('Erro no cadastro: ' + error.message, 'error');
+      } finally {
+        showLoading(false);
       }
     });
 
-    // Login de usuário
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
       const senha = document.getElementById('loginSenha').value;
 
       try {
+        showLoading(true);
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
-
         if (error) throw error;
 
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-
+        const userData = await supabase.auth.getUser();
         authSection.style.display = 'none';
+        authLogo.style.display = 'none'; // Esconde o logo da autenticação
         mainContent.style.display = 'block';
-        const nomeUsuario = userData.user.user_metadata.nome || email;
-        userNomeDisplay.textContent = nomeUsuario;
+        mainLogo.style.display = 'block'; // Mostra o logo da tela principal
+        userNomeDisplay.textContent = userData.data.user.user_metadata.nome || email;
         await checkLoveLink();
-        msg.textContent = '';
-        msg.className = '';
-        this.reset();
+        e.target.reset();
       } catch (error) {
-        msg.textContent = 'Erro no login: ' + error.message;
-        msg.className = 'error';
+        showMessage('Erro no login: ' + error.message, 'error');
+      } finally {
+        showLoading(false);
       }
     });
 
-    // Verificar se o usuário já possui um Love Link (para botões)
+    // Verificar Love Link existente
     async function checkLoveLink() {
-      try {
-        const user = await supabase.auth.getUser();
-        const userId = user.data.user.id;
-        const { data: loveLink, error } = await supabase
-          .from('love_links')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user.id;
+      const { data, error } = await supabase
+        .from('love_links')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-
-        currentLoveLink = loveLink || null;
-        if (currentLoveLink) {
-          btnCreateLoveLink.style.display = 'none';
-          loveLinkActions.style.display = 'block';
-        } else {
-          btnCreateLoveLink.style.display = 'block';
-          loveLinkActions.style.display = 'none';
-        }
-      } catch (error) {
-        msg.textContent = 'Erro ao verificar Love Link: ' + error.message;
-        msg.className = 'error';
-      }
+      if (error && error.code !== 'PGRST116') throw error;
+      currentLoveLink = data || null;
+      btnCreateLoveLink.style.display = currentLoveLink ? 'none' : 'block';
+      loveLinkActions.style.display = currentLoveLink ? 'flex' : 'none';
     }
 
-    // Criar Love Link
-    btnCreateLoveLink.addEventListener('click', () => {
-      loveLinkCreateScreen.style.display = 'block';
+    // Criação de Love Link
+    document.getElementById('btnCreateLoveLink').addEventListener('click', () => {
+      document.getElementById('loveLinkCreateScreen').style.display = 'block';
     });
 
-    // Salvar novo Love Link
     document.getElementById('saveCreate').addEventListener('click', async () => {
       const user = await supabase.auth.getUser();
       const userId = user.data.user.id;
       const pageName = document.getElementById('createPageName').value;
       const photoFormat = document.getElementById('createPhotoFormat').value;
       const photoSize = document.getElementById('createPhotoSize').value;
+      const backgroundColor = document.getElementById('createBackgroundColor').value;
+      const fontFamily = document.getElementById('createFontFamily').value;
       const photoFile = document.getElementById('createPhoto').files[0];
-      const caption = document.getElementById('createCaption').value || '';
+      const caption = document.getElementById('createCaption').value;
 
       if (!pageName) {
-        msg.textContent = 'O nome da página é obrigatório.';
-        msg.className = 'error';
+        showMessage('O nome da página é obrigatório.', 'error');
         return;
       }
 
       try {
-        const photoUrl = await uploadImageToImgur(photoFile);
+        showLoading(true);
         const newLoveLink = {
           user_id: userId,
           page_name: pageName,
-          photo: photoUrl,
-          photo_format: photoFormat, // Novo campo: formato da foto
-          photo_size: parseInt(photoSize), // Novo campo: tamanho da foto em pixels
+          photo_format: photoFormat,
+          photo_size: parseInt(photoSize),
+          background_color: backgroundColor,
+          font_family: fontFamily,
           caption: caption
         };
-        const { data, error } = await supabase.from('love_links').insert([newLoveLink]).select().single();
-        if (error) throw error;
+        const { data: loveLinkData, error: loveLinkError } = await supabase
+          .from('love_links')
+          .insert([newLoveLink])
+          .select()
+          .single();
+        if (loveLinkError) throw loveLinkError;
 
-        currentLoveLink = data;
-        msg.textContent = 'Love Link criado com sucesso!';
-        msg.className = 'success';
-        loveLinkCreateScreen.style.display = 'none';
+        if (photoFile) {
+          const imageData = await uploadImageToSupabase(photoFile);
+          const { error: imageError } = await supabase
+            .from('images')
+            .insert([{ love_link_id: loveLinkData.id, image_data: imageData }]);
+          if (imageError) throw imageError;
+        }
+
+        currentLoveLink = loveLinkData;
+        showMessage('Love Link criado com sucesso!', 'success');
+        document.getElementById('loveLinkCreateScreen').style.display = 'none';
         await checkLoveLink();
       } catch (error) {
-        msg.textContent = 'Erro ao criar Love Link: ' + error.message;
-        msg.className = 'error';
+        showMessage('Erro ao criar: ' + error.message, 'error');
+      } finally {
+        showLoading(false);
       }
     });
 
-    // Abrir Love Link em uma nova aba
-openLoveLink.addEventListener('click', async () => {
-  try {
-    const user = await supabase.auth.getUser();
-    const userId = user.data.user.id;
-    const { data: loveLink, error } = await supabase
-      .from('love_links')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // Visualizar Love Link
+    document.getElementById('openLoveLink').addEventListener('click', async () => {
+      if (!currentLoveLink) return;
+      const { id, page_name, photo_format, photo_size, background_color, font_family, caption } = currentLoveLink;
+      const photoData = await getImageForLoveLink(id);
+      const photoStyle = photo_format === 'square' ? `width: ${photo_size}px; height: ${photo_size}px;` :
+                        photo_format === 'horizontal' ? `width: ${photo_size * 1.5}px; height: ${photo_size}px;` :
+                        `width: ${photo_size}px; height: ${photo_size * 1.5}px;`;
 
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
-
-    if (loveLink) {
-      const photoUrl = loveLink.photo || 'https://via.placeholder.com/300x200?text=Sem+Foto';
-      const caption = loveLink.caption || 'Sem legenda';
-      const pageName = loveLink.page_name;
-      const photoFormat = loveLink.photo_format || 'square';
-      const photoSize = loveLink.photo_size || 300;
-
-      // Definir estilo da imagem com base no formato
-      let photoStyle = '';
-      switch (photoFormat) {
-        case 'square':
-          photoStyle = `width: ${photoSize}px; height: ${photoSize}px; object-fit: cover;`;
-          break;
-        case 'horizontal':
-          photoStyle = `width: ${photoSize * 1.5}px; height: ${photoSize}px; object-fit: cover;`;
-          break;
-        case 'vertical':
-          photoStyle = `width: ${photoSize}px; height: ${photoSize * 1.5}px; object-fit: cover;`;
-          break;
-      }
-
-      // HTML da nova aba com botão de voltar
       const newPageHTML = `
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${pageName}</title>
+          <title>${page_name}</title>
           <style>
-            body {
-              background-color: #121212;
-              color: #ffffff;
-              font-family: sans-serif;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              min-height: 100vh;
-              margin: 0;
-              padding: 20px;
-            }
-            h1 {
-              margin-bottom: 20px;
-              font-size: 24px;
-            }
-            img {
-              max-width: 100%;
-              border-radius: 10px;
-              margin-bottom: 20px;
-              ${photoStyle}
-            }
-            p {
-              font-size: 18px;
-              text-align: center;
-              max-width: 600px;
-              margin-bottom: 40px;
-            }
-            .back-btn {
-              position: fixed;
-              bottom: 20px;
-              width: 50px;
-              height: 50px;
-              background-color: #6200ea;
-              color: #ffffff;
-              border: none;
-              border-radius: 50%;
-              font-size: 24px;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              text-decoration: none;
-              transition: background-color 0.3s ease;
-            }
-            .back-btn:hover {
-              background-color: #3700b3;
-            }
+            body { background-color: ${background_color}; color: #fff; font-family: ${font_family}; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+            h1 { font-size: 28px; margin-bottom: 20px; }
+            img { max-width: 100%; border-radius: 10px; margin-bottom: 20px; ${photoStyle} object-fit: cover; }
+            p { font-size: 18px; text-align: center; max-width: 600px; }
+            .back-btn { position: fixed; bottom: 20px; right: 20px; background: #ff69b4; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; }
+            .back-btn:hover { background: #ff1493; }
           </style>
         </head>
         <body>
-          <h1>${pageName}</h1>
-          <img src="${photoUrl}" alt="Foto do Love Link">
-          <p>${caption}</p>
-          <a href="javascript:window.opener.focus();window.close();" class="back-btn">←</a>
+          <h1>${page_name}</h1>
+          <img src="${photoData || 'https://via.placeholder.com/300x200?text=Sem+Foto'}" alt="Love Link">
+          <p>${caption || 'Sem legenda'}</p>
+          <a href="javascript:window.close()" class="back-btn">Voltar</a>
         </body>
         </html>
       `;
-
-      // Abrir nova aba e escrever o HTML
       const newWindow = window.open('', '_blank');
       newWindow.document.write(newPageHTML);
       newWindow.document.close();
-
-      currentLoveLink = loveLink;
-    } else {
-      msg.textContent = 'Nenhum Love Link encontrado. Crie um primeiro!';
-      msg.className = 'error';
-    }
-  } catch (error) {
-    msg.textContent = 'Erro ao abrir Love Link: ' + error.message;
-    msg.className = 'error';
-  }
-});
-
-    // Excluir Love Link
-    deleteLoveLink.addEventListener('click', async () => {
-      if (!currentLoveLink) {
-        msg.textContent = 'Nenhum Love Link para excluir.';
-        msg.className = 'error';
-        return;
-      }
-      if (confirm('Tem certeza que deseja excluir o Love Link?')) {
-        const { error } = await supabase.from('love_links').delete().eq('id', currentLoveLink.id);
-        if (error) {
-          msg.textContent = 'Erro ao excluir Love Link: ' + error.message;
-          msg.className = 'error';
-        } else {
-          msg.textContent = 'Love Link excluído com sucesso!';
-          msg.className = 'success';
-          currentLoveLink = null;
-          await checkLoveLink();
-        }
-      }
     });
 
-    // Editar Love Link
-    editLoveLink.addEventListener('click', () => {
+    // Edição de Love Link
+    document.getElementById('editLoveLink').addEventListener('click', () => {
       if (currentLoveLink) {
-        loveLinkEditScreen.style.display = 'block';
+        const editScreen = document.getElementById('loveLinkEditScreen');
+        editScreen.style.display = 'block';
         document.getElementById('editPageName').value = currentLoveLink.page_name;
-        document.getElementById('editPhotoFormat').value = currentLoveLink.photo_format || 'square';
-        document.getElementById('editPhotoSize').value = currentLoveLink.photo_size || 300;
-        document.getElementById('editCaption').value = currentLoveLink.caption || '';
-      } else {
-        msg.textContent = 'Nenhum Love Link para editar.';
-        msg.className = 'error';
+        document.getElementById('editPhotoFormat').value = currentLoveLink.photo_format;
+        document.getElementById('editPhotoSize').value = currentLoveLink.photo_size;
+        document.getElementById('editBackgroundColor').value = currentLoveLink.background_color;
+        document.getElementById('editFontFamily').value = currentLoveLink.font_family;
+        document.getElementById('editCaption').value = currentLoveLink.caption;
       }
     });
 
-    // Salvar alterações do Love Link
     document.getElementById('saveEdit').addEventListener('click', async () => {
       const pageName = document.getElementById('editPageName').value;
       const photoFormat = document.getElementById('editPhotoFormat').value;
       const photoSize = document.getElementById('editPhotoSize').value;
+      const backgroundColor = document.getElementById('editBackgroundColor').value;
+      const fontFamily = document.getElementById('editFontFamily').value;
       const photoFile = document.getElementById('editPhoto').files[0];
-      const caption = document.getElementById('editCaption').value || '';
+      const caption = document.getElementById('editCaption').value;
 
       if (!pageName) {
-        msg.textContent = 'O nome da página é obrigatório.';
-        msg.className = 'error';
+        showMessage('O nome da página é obrigatório.', 'error');
         return;
       }
 
       try {
-        let photoUrl = currentLoveLink.photo;
-        if (photoFile) {
-          photoUrl = await uploadImageToImgur(photoFile);
-        }
+        showLoading(true);
         const updatedData = {
           page_name: pageName,
-          photo: photoUrl,
           photo_format: photoFormat,
           photo_size: parseInt(photoSize),
+          background_color: backgroundColor,
+          font_family: fontFamily,
           caption: caption
         };
-        const { error } = await supabase.from('love_links').update(updatedData).eq('id', currentLoveLink.id);
-        if (error) throw error;
+        const { error: updateError } = await supabase
+          .from('love_links')
+          .update(updatedData)
+          .eq('id', currentLoveLink.id);
+        if (updateError) throw updateError;
 
-        msg.textContent = 'Love Link atualizado com sucesso!';
-        msg.className = 'success';
-        loveLinkEditScreen.style.display = 'none';
+        if (photoFile) {
+          const imageData = await uploadImageToSupabase(photoFile);
+          const { error: deleteError } = await supabase
+            .from('images')
+            .delete()
+            .eq('love_link_id', currentLoveLink.id);
+          if (deleteError) throw deleteError;
+
+          const { error: insertError } = await supabase
+            .from('images')
+            .insert([{ love_link_id: currentLoveLink.id, image_data: imageData }]);
+          if (insertError) throw insertError;
+        }
+
+        currentLoveLink = { ...currentLoveLink, ...updatedData };
+        showMessage('Love Link atualizado!', 'success');
+        document.getElementById('loveLinkEditScreen').style.display = 'none';
         await checkLoveLink();
       } catch (error) {
-        msg.textContent = 'Erro ao atualizar Love Link: ' + error.message;
-        msg.className = 'error';
+        showMessage('Erro ao atualizar: ' + error.message, 'error');
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Exclusão de Love Link
+    document.getElementById('deleteLoveLink').addEventListener('click', async () => {
+      if (confirm('Deseja excluir este Love Link?')) {
+        try {
+          showLoading(true);
+          const { error } = await supabase.from('love_links').delete().eq('id', currentLoveLink.id);
+          if (error) throw error;
+
+          currentLoveLink = null;
+          showMessage('Love Link excluído!', 'success');
+          await checkLoveLink();
+        } catch (error) {
+          showMessage('Erro ao excluir: ' + error.message, 'error');
+        } finally {
+          showLoading(false);
+        }
       }
     });
   </script>
