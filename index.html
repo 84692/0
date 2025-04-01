@@ -26,6 +26,8 @@
       padding: 20px;
       min-height: 100vh;
       transition: all 0.3s ease;
+      margin: 0;
+      padding: 0;
     }
     h1, h2, h3 { margin-bottom: 20px; font-weight: 600; }
     
@@ -38,6 +40,7 @@
       border-radius: 10px;
       margin-bottom: 20px;
       transition: transform 0.3s ease;
+      margin-top: -20px; /* Ajuste o valor negativo para subir o container */
     }
     .container:hover { transform: translateY(-5px); }
     label {
@@ -79,11 +82,11 @@
     
     /* Estilo da logo */
     .logo {
-      display: block;
-      margin: 20px auto; /* Espaçamento acima e abaixo */
-      width: 150px;
-      height: auto;
-    }
+  display: block;
+  width: 250px;
+  height: auto;
+  margin: 0 auto 0 auto; /* Remove qualquer margem inferior */
+}
     
     /* Mensagens e animações */
     .msg {
@@ -143,7 +146,9 @@
     
     /* Responsividade */
     @media (max-width: 600px) {
-      .container { width: 90%; padding: 20px; }
+      .container {
+  margin-top: -40px; /* Aumenta a "sucção" para aproximar do logo */
+}
       .msg { width: 90%; }
       .logo { width: 120px; margin: 15px auto; } /* Ajuste na logo para telas menores */
       button, input, select, textarea { font-size: 14px; }
