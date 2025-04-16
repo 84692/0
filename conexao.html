@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Love Links - Conexão</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary-color: #EB4645;
+      --secondary-color: #C73A39;
+      --background-color: #000000;
+      --text-color: #ffffff;
+      --success-color: #EB4645;
+      --error-color: #ff4040;
+    }
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      transition: all 0.3s ease;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #1a1a1a;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+    .logo {
+      width: 100px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .back-button {
+      font-size: 24px;
+      color: var(--primary-color);
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .main-content {
+      margin-top: 70px;
+      width: 100%;
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+    }
+    .partner-form {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .partner-form input, .partner-form button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+    .partner-form button {
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .partner-form button:hover {
+      background-color: var(--secondary-color);
+    }
+    .partner-profile {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .partner-profile img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+      object-fit: cover;
+    }
+    .partner-profile h3 {
+      margin-bottom: 10px;
+    }
+    .unlink-button {
+      background: var(--error-color);
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .unlink-button:hover {
+      background: #ff6666;
+    }
+    .msg {
+      width: 100%;
+      max-width: 450px;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      text-align: center;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .msg.success { background-color: var(--success-color); color: #fff; }
+    .msg.error { background-color: var(--error-color); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button class="back-button" id="btnBack"><i class="fas fa-arrow-left"></i></button>
+    <img src="https://pegjlbpztozfoxzqwkhj.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2031%20de%20mar.%20de%202025,%2021_24_41.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMzEgZGUgbWFyLiBkZSAyMDI1LCAyMV8yNF80MS5wbmciLCJpYXQiOjE3NDM0ODI3NDUsImV4cCI6NDg5NzA4Mjc0NX0.numugP-SKr3Fs2WREm5L66S7grNzW6JzchNWib6jua4" alt="Logo Love Links" class="logo">
+  </div>
+
+  <div class="main-content">
+    <h1>Conexão <i class="fas fa-heart"></i></h1>
+    <div id="partnerSection" class="partner-form">
+      <h2>Adicionar Parceiro</h2>
+      <input type="email" id="partnerEmail" placeholder="Email do parceiro" required>
+      <button id="submitPartner">Convidar</button>
+    </div>
+    <div id="partnerProfile" class="partner-profile" style="display: none;">
+      <h2>Seu Parceiro</h2>
+      <img src="https://via.placeholder.com/100" alt="Foto do Parceiro" id="partnerPhoto">
+      <h3 id="partnerName">Nome do Parceiro</h3>
+      <button class="unlink-button" id="unlinkPartner">Desvincular Parceiro</button>
+    </div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'https://pegjlbpztozfoxzqwkhj.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZ2psYnB6dG96Zm94enF3a2hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMzNjExOTAsImV4cCI6MjA1ODkzNzE5MH0.l6Haxm0WMkD1Ts1b1fFyE-4LLsSn-9ovDlIkrEb2gS8';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const msg = document.getElementById('msg');
+    const partnerSection = document.getElementById('partnerSection');
+    const partnerProfile = document.getElementById('partnerProfile');
+    const partnerName = document.getElementById('partnerName');
+    const partnerPhoto = document.getElementById('partnerPhoto');
+    let currentUserId = null;
+    let currentCoupleId = null;
+    let partnerId = null;
+
+    function showMessage(text, type) {
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+      setTimeout(() => msg.className = 'msg', 3000);
+    }
+
+    async function checkAuth() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUserId = session.user.id;
+      await loadPartnerData();
+    }
+
+    async function loadPartnerData() {
+      try {
+        const { data: coupleData, error: coupleError } = await supabase
+          .from('couples')
+          .select(`
+            id,
+            user1_id,
+            user2_id,
+            profiles1:profiles!couples_user1_id_fkey (nome),
+            profiles2:profiles!couples_user2_id_fkey (nome)
+          `)
+          .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
+          .single();
+
+        if (coupleError && coupleError.code !== 'PGRST116') {
+          showMessage('Erro ao carregar parceiro: ' + coupleError.message, 'error');
+          return;
+        }
+
+        if (coupleData) {
+          currentCoupleId = coupleData.id;
+          partnerId = coupleData.user1_id === currentUserId ? coupleData.user2_id : coupleData.user1_id;
+          const partnerProfileData = coupleData.user1_id === currentUserId ? coupleData.profiles2 : coupleData.profiles1;
+
+          if (partnerId && partnerProfileData) {
+            partnerSection.style.display = 'none';
+            partnerProfile.style.display = 'block';
+            partnerName.textContent = partnerProfileData.nome || 'Parceiro';
+            partnerPhoto.src = 'https://via.placeholder.com/100';
+          } else {
+            partnerSection.style.display = 'block';
+            partnerProfile.style.display = 'none';
+          }
+        } else {
+          partnerSection.style.display = 'block';
+          partnerProfile.style.display = 'none';
+        }
+      } catch (error) {
+        showMessage('Erro ao carregar dados: ' + error.message, 'error');
+      }
+    }
+
+    async function addPartner() {
+      const partnerEmail = document.getElementById('partnerEmail').value.trim().toLowerCase();
+
+      if (!partnerEmail) {
+        showMessage('Por favor, insira o email do parceiro.', 'error');
+        return;
+      }
+
+      try {
+        const { data: partners, error: partnerError } = await supabase
+          .from('profiles')
+          .select('id, nome, email')
+          .ilike('email', partnerEmail);
+
+        if (partnerError || partners.length === 0) {
+          showMessage('Nenhum usuário encontrado com este email.', 'error');
+          return;
+        }
+
+        const partner = partners[0];
+
+        const { data: existingCouple, error: coupleError } = await supabase
+          .from('couples')
+          .select('id')
+          .or(`user1_id.eq.${partner.id},user2_id.eq.${partner.id}`)
+          .single();
+
+        if (existingCouple) {
+          showMessage('Este usuário já está vinculado a um casal.', 'error');
+          return;
+        }
+
+        const { error: insertError } = await supabase
+          .from('couples')
+          .insert({
+            user1_id: currentUserId,
+            user2_id: partner.id,
+            background_color: '#000000'
+          });
+
+        if (insertError) throw insertError;
+
+        showMessage('Parceiro adicionado com sucesso!', 'success');
+        document.getElementById('partnerEmail').value = '';
+        await loadPartnerData();
+      } catch (error) {
+        showMessage('Erro ao adicionar parceiro: ' + error.message, 'error');
+      }
+    }
+
+    async function unlinkPartner() {
+      if (!confirm('Tem certeza que deseja desvincular este parceiro? Isso não pode ser desfeito.')) return;
+
+      try {
+        const { error: deleteError } = await supabase
+          .from('couples')
+          .delete()
+          .eq('id', currentCoupleId);
+
+        if (deleteError) throw deleteError;
+
+        showMessage('Parceiro desvinculado com sucesso!', 'success');
+        currentCoupleId = null;
+        partnerId = null;
+        await loadPartnerData();
+      } catch (error) {
+        showMessage('Erro ao desvincular parceiro: ' + error.message, 'error');
+      }
+    }
+
+    function setupEventListeners() {
+      document.getElementById('btnBack').addEventListener('click', () => {
+        window.location.href = 'app.html';
+      });
+
+      document.getElementById('submitPartner').addEventListener('click', addPartner);
+
+      document.getElementById('unlinkPartner').addEventListener('click', unlinkPartner);
+    }
+
+    async function initialize() {
+      await checkAuth();
+      setupEventListeners();
+    }
+
+    initialize();
+  </script>
+</body>
+</html>

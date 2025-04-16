@@ -3,185 +3,290 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Love Links - Área Funcional</title>
+  <title>Love Links - Linha do Tempo</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --primary-color: #ff69b4;
-      --secondary-color: #ff1493;
+      --primary-color: #EB4645;
+      --secondary-color: #C73A39;
       --background-color: #000000;
       --text-color: #ffffff;
-      --success-color: #ff69b4;
+      --success-color: #EB4645;
       --error-color: #ff4040;
     }
     body {
       background-color: var(--background-color);
       color: var(--text-color);
-      font-family: 'Arial', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
+      font-family: Arial, sans-serif;
       min-height: 100vh;
+      transition: all 0.3s ease;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #1a1a1a;
+      padding: 0 20px;
+      z-index: 1000;
     }
     .logo {
-      width: 150px;
-      height: auto;
-      margin-bottom: 20px;
+      width: 100px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
     }
-    .container {
-      width: 100%;
-      max-width: 450px;
-      background: #1a1a1a;
-      padding: 30px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      transition: transform 0.3s ease;
-    }
-    .container:hover { transform: translateY(-5px); }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-size: 14px;
+    .hamburger {
+      font-size: 24px;
       color: var(--primary-color);
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    input, select, textarea {
+    .menu {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: #1a1a1a;
+      padding: 20px;
+      transition: left 0.3s ease;
+      z-index: 999;
+    }
+    .menu.active {
+      left: 0;
+    }
+    .menu button {
       width: 100%;
       padding: 12px;
-      margin: 5px 0 10px 0;
-      border: 1px solid var(--primary-color);
-      border-radius: 5px;
-      font-size: 16px;
-      background: #333;
-      color: var(--text-color);
-      transition: border-color 0.3s ease;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--secondary-color);
-      outline: none;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
+      margin: 10px 0;
       background-color: var(--primary-color);
       color: #fff;
       border: none;
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s ease, transform 0.2s ease;
+      transition: background-color 0.3s ease;
+      text-align: left;
     }
-    button:hover {
+    .menu button:hover {
       background-color: var(--secondary-color);
-      transform: scale(1.02);
+    }
+    .main-content {
+      margin-top: 70px;
+      width: 100%;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+      position: relative;
+      min-height: calc(100vh - 70px);
+    }
+    .timeline {
+      position: relative;
+      width: 100%;
+      min-height: 100%;
+    }
+    .item {
+      position: absolute;
+      border: 1px solid #444;
+      background: #2a2a2a;
+      cursor: move;
+      /* Remove resize: both para evitar interferência */
+      overflow: auto;
+      min-width: 100px;
+      min-height: 100px;
+      max-width: 80%;
+      max-height: 80%;
+      padding: 10px;
+      white-space: pre-wrap;
+    }
+    .item:hover {
+      border-color: var(--primary-color);
+    }
+    /* Alça de redimensionamento personalizada */
+    .resizer {
+      width: 15px;
+      height: 15px;
+      background: var(--primary-color);
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      cursor: se-resize;
+    }
+    .floating-edit {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1001;
+    }
+    .edit-button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      border: none;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .edit-panel {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      display: none;
+      width: 250px;
+      z-index: 1001;
+    }
+    .edit-panel.active {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .edit-panel button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .edit-panel button:hover {
+      background: var(--secondary-color);
     }
     .msg {
       width: 100%;
       max-width: 450px;
       padding: 10px;
-      margin-top: 10px;
       border-radius: 5px;
       text-align: center;
       position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
+      z-index: 1000;
     }
     .msg.success { background-color: var(--success-color); color: #fff; }
     .msg.error { background-color: var(--error-color); color: #fff; }
-    #loveLinkActions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1002;
+      align-items: center;
       justify-content: center;
     }
-    #deleteLoveLink {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: var(--error-color);
-      cursor: pointer;
-      transition: color 0.3s ease;
+    .modal-content {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
     }
-    #deleteLoveLink:hover { color: #ff6666; }
-    @media (max-width: 600px) {
-      .container { padding: 20px; }
-      .msg { width: 90%; }
-      .logo { width: 120px; }
-      button, input, select, textarea { font-size: 14px; }
-      #loveLinkActions { flex-direction: column; }
+    /* Caixa de texto simples, sem título */
+    .modal-content textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 8px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 5px;
+      min-height: 80px;
+    }
+    .modal-content button {
+      padding: 8px 16px;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .modal-content button:hover {
+      background: var(--secondary-color);
+    }
+    .trash-bin {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      background: #1a1a1a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: default;
+      z-index: 1001;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .trash-bin:hover {
+      background: #333;
     }
   </style>
 </head>
 <body>
-  <img src="https://pegjlbpztozfoxzqwkhj.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2031%20de%20mar.%20de%202025,%2021_24_41.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMzEgZGUgbWFyLiBkZSAyMDI1LCAyMV8yNF80MS5wbmciLCJpYXQiOjE3NDM0ODI3NDUsImV4cCI6NDg5NzA4Mjc0NX0.numugP-SKr3Fs2WREm5L66S7grNzW6JzchNWib6jua4" alt="Logo Love Links" class="logo">
-  <div id="mainContent" class="container">
+  <div class="top-bar">
+    <button class="hamburger"><i class="fas fa-bars"></i></button>
+    <img src="https://pegjlbpztozfoxzqwkhj.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2031%20de%20mar.%20de%202025,%2021_24_41.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMzEgZGUgbWFyLiBkZSAyMDI1LCAyMV8yNF80MS5wbmciLCJpYXQiOjE3NDM0ODI3NDUsImV4cCI6NDg5NzA4Mjc0NX0.numugP-SKr3Fs2WREm5L66S7grNzW6JzchNWib6jua4" alt="Logo Love Links" class="logo">
+  </div>
+
+  <div class="menu" id="menu">
+    <button id="btnManagePartner"><i class="fas fa-user-plus"></i> Parceiro</button>
+    <button id="logout"><i class="fas fa-sign-out-alt"></i> Sair</button>
+  </div>
+
+  <div class="main-content">
     <h1>Bem-vindo, <span id="userNome"></span>! <i class="fas fa-heart"></i></h1>
-    <button id="btnCreateLoveLink" style="display: none;"><i class="fas fa-plus"></i> Criar Love Link</button>
-    <div id="loveLinkActions" style="display: none;">
-      <button id="openLoveLink"><i class="fas fa-eye"></i> Ver Love Link</button>
-      <button id="editLoveLink"><i class="fas fa-edit"></i> Editar</button>
-      <button id="deleteLoveLink" title="Excluir Love Link"><i class="fas fa-trash"></i></button>
+    <div class="timeline" id="timeline"></div>
+    <div class="floating-edit">
+      <button class="edit-button" id="toggleEditPanel"><i class="fas fa-edit"></i></button>
+      <div class="edit-panel" id="editPanel">
+        <label for="editBackgroundColor">Cor de Fundo:</label>
+        <input type="color" id="editBackgroundColor" class="editable-field">
+        <button id="btnAddTextFloating"><i class="fas fa-font"></i> Adicionar Texto</button>
+      </div>
     </div>
-    <button id="logout">Sair</button>
+    <div class="trash-bin" id="trashBin">🗑️</div>
+    <div id="msg" class="msg"></div>
   </div>
 
-  <div id="loveLinkCreateScreen" class="container" style="display: none;">
-    <h3><i class="fas fa-heartbeat"></i> Criar Love Link</h3>
-    <label for="createPageName">Nome da Página:</label>
-    <input type="text" id="createPageName" placeholder="Digite o nome da página" required>
-    <label for="createPhotoFormat">Formato da Foto:</label>
-    <select id="createPhotoFormat">
-      <option value="square">Quadrado</option>
-      <option value="horizontal">Horizontal</option>
-      <option value="vertical">Vertical</option>
-    </select>
-    <label for="createPhotoSize">Tamanho da Foto (px):</label>
-    <input type="number" id="createPhotoSize" placeholder="Tamanho em pixels" value="300" min="100" max="1000">
-    <label for="createBackgroundColor">Cor de Fundo:</label>
-    <input type="color" id="createBackgroundColor" value="#ffcad4">
-    <label for="createFontFamily">Fonte do Texto:</label>
-    <select id="createFontFamily">
-      <option value="Arial, sans-serif">Arial</option>
-      <option value="Georgia, serif">Georgia</option>
-      <option value="Courier New, monospace">Courier New</option>
-    </select>
-    <label for="createPhoto">Foto:</label>
-    <input type="file" id="createPhoto" accept="image/*">
-    <label for="createCaption">Legenda:</label>
-    <textarea id="createCaption" placeholder="Digite uma legenda (opcional)" rows="3"></textarea>
-    <button id="saveCreate"><i class="fas fa-save"></i> Salvar</button>
+  <div class="modal" id="textModal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Adicionar Texto</h2>
+      <textarea id="textContent" placeholder="Digite seu texto" required></textarea>
+      <button id="submitText">Salvar</button>
+    </div>
   </div>
 
-  <div id="loveLinkEditScreen" class="container" style="display: none;">
-    <h3><i class="fas fa-edit"></i> Editar Love Link</h3>
-    <label for="editPageName">Nome da Página:</label>
-    <input type="text" id="editPageName" placeholder="Digite o nome da página" required>
-    <label for="editPhotoFormat">Formato da Foto:</label>
-    <select id="editPhotoFormat">
-      <option value="square">Quadrado</option>
-      <option value="horizontal">Horizontal</option>
-      <option value="vertical">Vertical</option>
-    </select>
-    <label for="editPhotoSize">Tamanho da Foto (px):</label>
-    <input type="number" id="editPhotoSize" placeholder="Tamanho em pixels" value="300" min="100" max="1000">
-    <label for="editBackgroundColor">Cor de Fundo:</label>
-    <input type="color" id="editBackgroundColor" value="#ffcad4">
-    <label for="editFontFamily">Fonte do Texto:</label>
-    <select id="editFontFamily">
-      <option value="Arial, sans-serif">Arial</option>
-      <option value="Georgia, serif">Georgia</option>
-      <option value="Courier New, monospace">Courier New</option>
-    </select>
-    <label for="editPhoto">Foto:</label>
-    <input type="file" id="editPhoto" accept="image/*">
-    <label for="editCaption">Legenda:</label>
-    <textarea id="editCaption" placeholder="Digite uma legenda (opcional)" rows="3"></textarea>
-    <button id="saveEdit"><i class="fas fa-save"></i> Salvar Alterações</button>
-  </div>
-
-  <div id="msg" class="msg"></div>
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -191,242 +296,478 @@
 
     const msg = document.getElementById('msg');
     const userNomeDisplay = document.getElementById('userNome');
-    const btnCreateLoveLink = document.getElementById('btnCreateLoveLink');
-    const loveLinkActions = document.getElementById('loveLinkActions');
-    let currentLoveLink = null;
+    const timeline = document.getElementById('timeline');
+    const menu = document.getElementById('menu');
+    const hamburger = document.querySelector('.hamburger');
+    const editPanel = document.getElementById('editPanel');
+    const toggleEditPanel = document.getElementById('toggleEditPanel');
+    const textModal = document.getElementById('textModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const textContentInput = document.getElementById('textContent');
+    const submitTextBtn = document.getElementById('submitText');
+    const trashBin = document.getElementById('trashBin');
+    let currentCoupleId = null;
+    let currentUserId = null;
+    let editingItemId = null;
+    let isDraggingItem = null;
 
     function showMessage(text, type) {
       msg.textContent = text;
-      msg.classList.add('msg', type);
-      setTimeout(() => {
-        msg.classList.remove('msg', type);
-        msg.textContent = '';
-      }, 3000);
+      msg.className = `msg ${type}`;
+      setTimeout(() => msg.className = 'msg', 3000);
     }
 
     async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
         window.location.href = 'login.html';
-      } else {
-        const user = session.user;
-        userNomeDisplay.textContent = user.user_metadata.nome || user.email;
-        await checkLoveLink();
-      }
-    }
-
-    async function checkLoveLink() {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user.id;
-      const { data, error } = await supabase
-        .from('love_links')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      currentLoveLink = data || null;
-      btnCreateLoveLink.style.display = currentLoveLink ? 'none' : 'block';
-      loveLinkActions.style.display = currentLoveLink ? 'flex' : 'none';
-    }
-
-    document.getElementById('logout').addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.href = 'login.html';
-    });
-
-    document.getElementById('btnCreateLoveLink').addEventListener('click', () => {
-      document.getElementById('loveLinkCreateScreen').style.display = 'block';
-    });
-
-    document.getElementById('saveCreate').addEventListener('click', async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user.id;
-      const pageName = document.getElementById('createPageName').value;
-      const photoFormat = document.getElementById('createPhotoFormat').value;
-      const photoSize = document.getElementById('createPhotoSize').value;
-      const backgroundColor = document.getElementById('createBackgroundColor').value;
-      const fontFamily = document.getElementById('createFontFamily').value;
-      const photoFile = document.getElementById('createPhoto').files[0];
-      const caption = document.getElementById('createCaption').value;
-
-      if (!pageName) {
-        showMessage('O nome da página é obrigatório.', 'error');
         return;
       }
+      userNomeDisplay.textContent = session.user.user_metadata.nome || session.user.email;
+      currentUserId = session.user.id;
+      await loadCoupleData();
+    }
 
+    async function loadCoupleData() {
       try {
-        const newLoveLink = {
-          user_id: userId,
-          page_name: pageName,
-          photo_format: photoFormat,
-          photo_size: parseInt(photoSize),
-          background_color: backgroundColor,
-          font_family: fontFamily,
-          caption: caption
-        };
-        const { data: loveLinkData, error: loveLinkError } = await supabase
-          .from('love_links')
-          .insert([newLoveLink])
-          .select()
+        const { data: coupleData, error: coupleError } = await supabase
+          .from('couples')
+          .select('*')
+          .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
           .single();
-        if (loveLinkError) throw loveLinkError;
 
-        if (photoFile) {
-          const imageData = await uploadImageToSupabase(photoFile);
-          const { error: imageError } = await supabase
-            .from('images')
-            .insert([{ love_link_id: loveLinkData.id, image_data: imageData }]);
-          if (imageError) throw imageError;
+        if (coupleError && coupleError.code !== 'PGRST116') {
+          showMessage('Erro ao carregar dados do casal: ' + coupleError.message, 'error');
+          return;
         }
 
-        currentLoveLink = loveLinkData;
-        showMessage('Love Link criado com sucesso!', 'success');
-        document.getElementById('loveLinkCreateScreen').style.display = 'none';
-        await checkLoveLink();
+        if (coupleData) {
+          currentCoupleId = coupleData.id;
+          document.body.style.backgroundColor = coupleData.background_color || '#000000';
+          document.getElementById('editBackgroundColor').value = coupleData.background_color || '#000000';
+          await loadItems();
+          setupRealtime();
+        } else {
+          timeline.innerHTML = '<p>Adicione um parceiro para começar.</p>';
+        }
       } catch (error) {
-        showMessage('Erro ao criar: ' + error.message, 'error');
+        console.error('Erro em loadCoupleData:', error);
+        showMessage('Erro ao carregar casal: ' + error.message, 'error');
       }
-    });
+    }
 
-    async function uploadImageToSupabase(file) {
-      if (!file) return null;
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
-        reader.readAsDataURL(file);
+    async function loadItems() {
+      if (!currentCoupleId) return;
+
+      try {
+        console.log('Carregando itens para couple_id:', currentCoupleId);
+        const { data: items, error } = await supabase
+          .from('love_links')
+          .select('id, item_type, caption, created_at, position_x, position_y, width, height')
+          .eq('couple_id', currentCoupleId)
+          .eq('item_type', 'text');
+
+        if (error) {
+          console.error('Erro ao carregar itens:', error);
+          showMessage('Erro ao carregar itens: ' + error.message, 'error');
+          return;
+        }
+
+        timeline.innerHTML = '';
+        for (const item of items) {
+          createItemElement(item);
+        }
+      } catch (error) {
+        console.error('Erro geral em loadItems:', error);
+        showMessage('Erro ao carregar itens: ' + error.message, 'error');
+      }
+    }
+
+    function createItemElement(item) {
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('item');
+      itemDiv.dataset.id = item.id;
+
+      itemDiv.style.left = `${item.position_x}px`;
+      itemDiv.style.top = `${item.position_y}px`;
+      itemDiv.style.width = `${item.width}px`;
+      itemDiv.style.height = `${item.height}px`;
+
+      // Caixa de texto simples – sem título
+      const text = document.createElement('p');
+      text.textContent = item.caption || '';
+      itemDiv.appendChild(text);
+
+      // Cria a alça de redimensionamento
+      const resizer = document.createElement('div');
+      resizer.classList.add('resizer');
+      itemDiv.appendChild(resizer);
+      addResizeListeners(itemDiv, resizer);
+
+      itemDiv.addEventListener('click', (e) => {
+        // Se estiver redimensionando, não entra em modo de edição
+        if (isDraggingItem === item.id) return;
+        e.stopPropagation();
+        editingItemId = item.id;
+        modalTitle.textContent = 'Editar Texto';
+        textContentInput.value = item.caption || '';
+        textModal.style.display = 'flex';
+      });
+
+      makeDraggable(itemDiv);
+      timeline.appendChild(itemDiv);
+    }
+
+    function addResizeListeners(item, resizer) {
+      let isResizing = false;
+      let initialWidth, initialHeight, startX, startY;
+
+      resizer.addEventListener('mousedown', (e) => {
+        e.stopPropagation(); // Impede que o drag seja iniciado
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialWidth = parseInt(window.getComputedStyle(item).width, 10);
+        initialHeight = parseInt(window.getComputedStyle(item).height, 10);
+        document.addEventListener('mousemove', resizeMouseMove);
+        document.addEventListener('mouseup', stopResizing);
+      });
+
+      function resizeMouseMove(e) {
+        if (!isResizing) return;
+        const newWidth = initialWidth + (e.clientX - startX);
+        const newHeight = initialHeight + (e.clientY - startY);
+        item.style.width = `${newWidth}px`;
+        item.style.height = `${newHeight}px`;
+      }
+
+      function stopResizing(e) {
+        if (isResizing) {
+          isResizing = false;
+          document.removeEventListener('mousemove', resizeMouseMove);
+          document.removeEventListener('mouseup', stopResizing);
+          // Salva a nova dimensão no banco
+          updateItemPosition(
+            item.dataset.id,
+            parseInt(item.style.left) || 0,
+            parseInt(item.style.top) || 0,
+            parseInt(item.style.width),
+            parseInt(item.style.height)
+          );
+        }
+      }
+    }
+
+    function isColliding(element1, element2) {
+      const rect1 = element1.getBoundingClientRect();
+      const rect2 = element2.getBoundingClientRect();
+      return !(
+        rect1.right < rect2.left ||
+        rect1.left > rect2.right ||
+        rect1.bottom < rect2.top ||
+        rect1.top > rect2.bottom
+      );
+    }
+
+    function makeDraggable(element) {
+      let isDragging = false;
+      let currentX = parseInt(element.style.left) || 0;
+      let currentY = parseInt(element.style.top) || 0;
+      let initialX;
+      let initialY;
+      let updateTimeout; // Timer de debounce
+
+      element.addEventListener('mousedown', (e) => {
+        // Se clicar no resizer, não inicia o drag
+        if (e.target.classList.contains('resizer')) return;
+        if (textModal.style.display === 'flex') return;
+        e.preventDefault();
+        initialX = e.clientX - currentX;
+        initialY = e.clientY - currentY;
+        isDragging = true;
+        isDraggingItem = element.dataset.id;
+        element.style.zIndex = 1000;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          e.preventDefault();
+          currentX = e.clientX - initialX;
+          currentY = e.clientY - initialY;
+          element.style.left = `${currentX}px`;
+          element.style.top = `${currentY}px`;
+          if (updateTimeout) clearTimeout(updateTimeout);
+          updateTimeout = setTimeout(() => {
+            updateItemPosition(
+              element.dataset.id,
+              currentX,
+              currentY,
+              parseInt(element.style.width),
+              parseInt(element.style.height)
+            );
+          }, 200);
+
+          // Se colidir com a lixeira, remova imediatamente da tela e depois delete do banco
+          if (isColliding(element, trashBin)) {
+            element.remove();
+            deleteItem(element.dataset.id);
+            isDragging = false;
+            isDraggingItem = null;
+          }
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          element.style.zIndex = '';
+          setTimeout(() => { isDraggingItem = null; }, 100);
+        }
       });
     }
 
-    document.getElementById('openLoveLink').addEventListener('click', async () => {
-      if (!currentLoveLink) return;
-      const { id, page_name, photo_format, photo_size, background_color, font_family, caption } = currentLoveLink;
-      const photoData = await getImageForLoveLink(id);
-      const photoStyle = photo_format === 'square' ? `width: ${photo_size}px; height: ${photo_size}px;` :
-                        photo_format === 'horizontal' ? `width: ${photo_size * 1.5}px; height: ${photo_size}px;` :
-                        `width: ${photo_size}px; height: ${photo_size * 1.5}px;`;
-
-      const newPageHTML = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${page_name}</title>
-          <style>
-            body { background-color: ${background_color}; color: #fff; font-family: ${font_family}; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-            h1 { font-size: 28px; margin-bottom: 20px; }
-            img { max-width: 100%; border-radius: 10px; margin-bottom: 20px; ${photoStyle} object-fit: cover; }
-            p { font-size: 18px; text-align: center; max-width: 600px; }
-            .back-btn { position: fixed; bottom: 20px; right: 20px; background: #ff69b4; color: #fff; padding: 10px 20px; border-radius: 5px; text-decoration: none; }
-            .back-btn:hover { background: #ff1493; }
-          </style>
-        </head>
-        <body>
-          <h1>${page_name}</h1>
-          <img src="${photoData || 'https://via.placeholder.com/300x200?text=Sem+Foto'}" alt="Love Link">
-          <p>${caption || 'Sem legenda'}</p>
-          <a href="javascript:window.close()" class="back-btn">Voltar</a>
-        </body>
-        </html>
-      `;
-      const newWindow = window.open('', '_blank');
-      newWindow.document.write(newPageHTML);
-      newWindow.document.close();
-    });
-
-    async function getImageForLoveLink(loveLinkId) {
-      const { data, error } = await supabase
-        .from('images')
-        .select('image_data')
-        .eq('love_link_id', loveLinkId)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data ? data.image_data : null;
+    async function updateItemPosition(id, x, y, width, height) {
+      try {
+        const { error } = await supabase
+          .from('love_links')
+          .update({
+            position_x: Math.round(x),
+            position_y: Math.round(y),
+            width: Math.round(width),
+            height: Math.round(height)
+          })
+          .eq('id', id);
+        if (error) throw error;
+      } catch (error) {
+        console.error('Erro ao atualizar posição:', error);
+        showMessage('Erro ao salvar posição: ' + error.message, 'error');
+      }
     }
 
-    document.getElementById('editLoveLink').addEventListener('click', () => {
-      if (currentLoveLink) {
-        const editScreen = document.getElementById('loveLinkEditScreen');
-        editScreen.style.display = 'block';
-        document.getElementById('editPageName').value = currentLoveLink.page_name;
-        document.getElementById('editPhotoFormat').value = currentLoveLink.photo_format;
-        document.getElementById('editPhotoSize').value = currentLoveLink.photo_size;
-        document.getElementById('editBackgroundColor').value = currentLoveLink.background_color;
-        document.getElementById('editFontFamily').value = currentLoveLink.font_family;
-        document.getElementById('editCaption').value = currentLoveLink.caption;
+    async function deleteItem(id) {
+      try {
+        // A exclusão do banco é assíncrona, mas já removemos a caixa da tela
+        const { error } = await supabase
+          .from('love_links')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        showMessage('Item excluído com sucesso!', 'success');
+      } catch (error) {
+        console.error('Erro ao excluir item:', error);
+        showMessage('Erro ao excluir item: ' + error.message, 'error');
       }
-    });
+    }
 
-    document.getElementById('saveEdit').addEventListener('click', async () => {
-      const pageName = document.getElementById('editPageName').value;
-      const photoFormat = document.getElementById('editPhotoFormat').value;
-      const photoSize = document.getElementById('editPhotoSize').value;
-      const backgroundColor = document.getElementById('editBackgroundColor').value;
-      const fontFamily = document.getElementById('editFontFamily').value;
-      const photoFile = document.getElementById('editPhoto').files[0];
-      const caption = document.getElementById('editCaption').value;
+    function getCenterPosition() {
+      const timelineRect = timeline.getBoundingClientRect();
+      const width = 200;
+      const height = 200;
+      const maxWidth = Math.min(timelineRect.width, 800);
+      const position_x = (maxWidth - width) / 2;
+      const position_y = ((window.innerHeight - 70) - height) / 2;
+      return { x: Math.round(position_x), y: Math.round(position_y), width, height };
+    }
 
-      if (!pageName) {
-        showMessage('O nome da página é obrigatório.', 'error');
+    async function saveText() {
+      const content = textContentInput.value.trim();
+      if (!content) {
+        showMessage('Digite um texto.', 'error');
         return;
       }
-
       try {
-        const updatedData = {
-          page_name: pageName,
-          photo_format: photoFormat,
-          photo_size: parseInt(photoSize),
-          background_color: backgroundColor,
-          font_family: fontFamily,
-          caption: caption
-        };
-        const { error: updateError } = await supabase
-          .from('love_links')
-          .update(updatedData)
-          .eq('id', currentLoveLink.id);
-        if (updateError) throw updateError;
-
-        if (photoFile) {
-          const imageData = await uploadImageToSupabase(photoFile);
-          const { error: deleteError } = await supabase
-            .from('images')
-            .delete()
-            .eq('love_link_id', currentLoveLink.id);
-          if (deleteError) throw deleteError;
-
-          const { error: insertError } = await supabase
-            .from('images')
-            .insert([{ love_link_id: currentLoveLink.id, image_data: imageData }]);
-          if (insertError) throw insertError;
-        }
-
-        currentLoveLink = { ...currentLoveLink, ...updatedData };
-        showMessage('Love Link atualizado!', 'success');
-        document.getElementById('loveLinkEditScreen').style.display = 'none';
-        await checkLoveLink();
-      } catch (error) {
-        showMessage('Erro ao atualizar: ' + error.message, 'error');
-      }
-    });
-
-    document.getElementById('deleteLoveLink').addEventListener('click', async () => {
-      if (confirm('Deseja excluir este Love Link?')) {
-        try {
-          const { error } = await supabase.from('love_links').delete().eq('id', currentLoveLink.id);
+        if (editingItemId) {
+          const { error } = await supabase
+            .from('love_links')
+            .update({
+              caption: content,
+              user_id: currentUserId
+            })
+            .eq('id', editingItemId);
           if (error) throw error;
-
-          currentLoveLink = null;
-          showMessage('Love Link excluído!', 'success');
-          await checkLoveLink();
-        } catch (error) {
-          showMessage('Erro ao excluir: ' + error.message, 'error');
+          showMessage('Texto atualizado com sucesso!', 'success');
+        } else {
+          const { x, y, width, height } = getCenterPosition();
+          const { error } = await supabase
+            .from('love_links')
+            .insert({
+              couple_id: currentCoupleId,
+              item_type: 'text',
+              caption: content,
+              created_at: new Date().toISOString(),
+              position_x: x,
+              position_y: y,
+              width: width,
+              height: height,
+              user_id: currentUserId
+            });
+          if (error) throw error;
+          showMessage('Texto adicionado com sucesso!', 'success');
         }
+        textModal.style.display = 'none';
+        textContentInput.value = '';
+        editingItemId = null;
+        modalTitle.textContent = 'Adicionar Texto';
+      } catch (error) {
+        console.error('Erro ao salvar texto:', error);
+        showMessage('Erro ao salvar texto: ' + error.message, 'error');
       }
-    });
+    }
 
-    checkAuth();
+    function setupRealtime() {
+      // Subscription para love_links
+      const loveLinksChannel = supabase
+        .channel(`love_links_${currentCoupleId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'love_links',
+            filter: `couple_id=eq.${currentCoupleId}`
+          },
+          (payload) => {
+            console.log('Mudança em love_links:', payload);
+            if (payload.eventType === 'INSERT' && payload.new.item_type === 'text') {
+              if (isDraggingItem === payload.new.id || editingItemId === payload.new.id) return;
+              const existing = document.querySelector(`.item[data-id="${payload.new.id}"]`);
+              if (!existing) {
+                createItemElement(payload.new);
+              }
+            } else if (payload.eventType === 'UPDATE' && payload.new.item_type === 'text') {
+              if (isDraggingItem === payload.new.id || editingItemId === payload.new.id) return;
+              const existing = document.querySelector(`.item[data-id="${payload.new.id}"]`);
+              if (existing) {
+                existing.style.left = `${payload.new.position_x}px`;
+                existing.style.top = `${payload.new.position_y}px`;
+                existing.style.width = `${payload.new.width}px`;
+                existing.style.height = `${payload.new.height}px`;
+                const p = existing.querySelector('p');
+                if (p) p.textContent = payload.new.caption || '';
+              } else {
+                createItemElement(payload.new);
+              }
+            } else if (payload.eventType === 'DELETE') {
+              const item = document.querySelector(`.item[data-id="${payload.old.id}"]`);
+              if (item) item.remove();
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log('Status da subscription love_links:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('Subscription love_links ativa para couple_id:', currentCoupleId);
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            console.warn('Subscription love_links falhou, tentando reconectar...');
+            setTimeout(() => loveLinksChannel.subscribe(), 5000);
+          }
+        });
+
+      // Subscription para couples – atualiza a cor de fundo
+      const couplesChannel = supabase
+        .channel(`couples_${currentCoupleId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'couples',
+            filter: `id=eq.${currentCoupleId}`
+          },
+          (payload) => {
+            console.log('Mudança em couples:', payload);
+            const newColor = payload.new.background_color || '#000000';
+            document.body.style.backgroundColor = newColor;
+            document.getElementById('editBackgroundColor').value = newColor;
+            showMessage('Cor de fundo atualizada!', 'success');
+          }
+        )
+        .subscribe((status) => {
+          console.log('Status da subscription couples:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('Subscription couples ativa para couple_id:', currentCoupleId);
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            console.warn('Subscription couples falhou, tentando reconectar...');
+            setTimeout(() => couplesChannel.subscribe(), 5000);
+          }
+        });
+    }
+
+    function setupEventListeners() {
+      hamburger.addEventListener('click', () => {
+        menu.classList.toggle('active');
+      });
+
+      document.getElementById('btnManagePartner').addEventListener('click', () => {
+        window.location.href = 'conexao.html';
+      });
+
+      document.getElementById('logout').addEventListener('click', async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          showMessage('Erro ao sair: ' + error.message, 'error');
+        } else {
+          window.location.href = 'login.html';
+        }
+      });
+
+      document.getElementById('btnAddTextFloating').addEventListener('click', () => {
+        if (!currentCoupleId) {
+          showMessage('Adicione um parceiro antes de começar.', 'error');
+          return;
+        }
+        editingItemId = null;
+        modalTitle.textContent = 'Adicionar Texto';
+        textContentInput.value = '';
+        textModal.style.display = 'flex';
+      });
+
+      submitTextBtn.addEventListener('click', saveText);
+
+      textModal.addEventListener('click', (e) => {
+        if (e.target === textModal) {
+          textModal.style.display = 'none';
+          editingItemId = null;
+          modalTitle.textContent = 'Adicionar Texto';
+          textContentInput.value = '';
+        }
+      });
+
+      toggleEditPanel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        editPanel.classList.toggle('active');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!editPanel.contains(e.target) && !toggleEditPanel.contains(e.target)) {
+          editPanel.classList.remove('active');
+        }
+      });
+
+      // Ao alterar a cor, salva imediatamente no banco
+      document.getElementById('editBackgroundColor').addEventListener('input', async () => {
+        const newColor = document.getElementById('editBackgroundColor').value;
+        document.body.style.backgroundColor = newColor;
+        try {
+          const { error } = await supabase
+            .from('couples')
+            .update({ background_color: newColor })
+            .eq('id', currentCoupleId);
+          if (error) throw error;
+          showMessage('Cor de fundo atualizada!', 'success');
+        } catch (error) {
+          console.error('Erro ao salvar cor de fundo:', error);
+          showMessage('Erro ao salvar cor de fundo: ' + error.message, 'error');
+        }
+      });
+    }
+
+    async function initialize() {
+      await checkAuth();
+      setupEventListeners();
+    }
+
+    initialize();
   </script>
 </body>
 </html>

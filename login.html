@@ -8,12 +8,12 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --primary-color: #ff69b4;
-      --secondary-color: #ff1493;
+      --primary-color: #EB4645; /* Novo tom vermelho */
+      --secondary-color: #C73A39; /* Tom mais escuro para hover */
       --background-color: #000000;
       --text-color: #ffffff;
-      --success-color: #ff69b4;
-      --error-color: #ff4040;
+      --success-color: #EB4645; /* Ajustado para o novo tema */
+      --error-color: #ff4040; /* Mantido, já é compatível */
     }
     body {
       background-color: var(--background-color);
@@ -25,6 +25,11 @@
       padding: 20px;
       min-height: 100vh;
     }
+    .logo {
+      width: 150px;
+      height: auto;
+      margin-bottom: 20px;
+    }
     .container {
       width: 100%;
       max-width: 450px;
@@ -32,9 +37,7 @@
       padding: 30px;
       border-radius: 10px;
       margin-bottom: 20px;
-      transition: transform 0.3s ease;
     }
-    .container:hover { transform: translateY(-5px); }
     label {
       display: block;
       margin-top: 10px;
@@ -58,7 +61,7 @@
     }
     button {
       width: 100%;
-      padding: 12px;
+      padding: 16px; /* Ajustado anteriormente para botões mais robustos */
       background-color: var(--primary-color);
       color: #fff;
       border: none;
@@ -94,6 +97,7 @@
     .msg.success { background-color: var(--success-color); color: #fff; }
     .msg.error { background-color: var(--error-color); color: #fff; }
     @media (max-width: 600px) {
+      .logo { width: 120px; }
       .container { padding: 20px; }
       .msg { width: 90%; }
       button, input { font-size: 14px; }
@@ -101,6 +105,7 @@
   </style>
 </head>
 <body>
+  <img src="https://pegjlbpztozfoxzqwkhj.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2031%20de%20mar.%20de%202025,%2021_24_41.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMzEgZGUgbWFyLiBkZSAyMDI1LCAyMV8yNF80MS5wbmciLCJpYXQiOjE3NDM0ODI3NDUsImV4cCI6NDg5NzA4Mjc0NX0.numugP-SKr3Fs2WREm5L66S7grNzW6JzchNWib6jua4" alt="Logo Love Links" class="logo">
   <div id="authSection" class="container">
     <div id="loginSection">
       <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
