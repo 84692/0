@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Comunidade - Comentários</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary-color: #6A5ACD;
+      --secondary-color: #483D8B;
+      --background-color: #000000;
+      --text-color: #ffffff;
+      --success-color: #6A5ACD;
+      --error-color: #ff4040;
+      --line-color: #555;
+    }
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #1a1a1a;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+    .back-btn {
+      font-size: 24px;
+      color: var(--primary-color);
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo {
+      width: 100px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .main-content {
+      margin-top: 70px;
+      width: 100%;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+      min-height: calc(100vh - 70px);
+    }
+    .post {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--primary-color);
+      margin-bottom: 20px;
+    }
+    .post img {
+      max-width: 100%;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    .post .user-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .post .user-info img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .post .timestamp {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    .comment-form {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--primary-color);
+      margin-bottom: 20px;
+    }
+    .comment-form textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid var(--primary-color);
+      border-radius: 5px;
+      background: #333;
+      color: var(--text-color);
+      font-size: 16px;
+      min-height: 80px;
+      resize: vertical;
+    }
+    .comment-form button {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .comment-form button:hover {
+      background-color: var(--secondary-color);
+    }
+    .comments {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .comment {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid var(--primary-color);
+      position: relative;
+      max-width: 100%;
+    }
+    .comment.level-0 {
+      padding-left: 15px;
+    }
+    .comment.level-1 {
+      padding-left: 35px;
+    }
+    .comment.level-2 {
+      padding-left: 55px;
+    }
+    .comment.level-3 {
+      padding-left: 75px;
+    }
+    .comment.level-4 {
+      padding-left: 95px;
+    }
+    .comment.level-5,
+    .comment.level-6,
+    .comment.level-7,
+    .comment.level-8,
+    .comment.level-9,
+    .comment.level-10 {
+      padding-left: 115px;
+    }
+    .comment:not(.level-0)::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: -15px;
+      bottom: 0;
+      width: 2px;
+      background: var(--line-color);
+    }
+    .comment:not(.level-0)::after {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 25px;
+      width: 15px;
+      height: 2px;
+      background: var(--line-color);
+    }
+    .comment.level-1::before { left: 10px; }
+    .comment.level-1::after { left: 10px; }
+    .comment.level-2::before { left: 30px; }
+    .comment.level-2::after { left: 30px; }
+    .comment.level-3::before { left: 50px; }
+    .comment.level-3::after { left: 50px; }
+    .comment.level-4::before { left: 70px; }
+    .comment.level-4::after { left: 70px; }
+    .comment.level-5::before,
+    .comment.level-6::before,
+    .comment.level-7::before,
+    .comment.level-8::before,
+    .comment.level-9::before,
+    .comment.level-10::before { left: 90px; }
+    .comment.level-5::after,
+    .comment.level-6::after,
+    .comment.level-7::after,
+    .comment.level-8::after,
+    .comment.level-9::after,
+    .comment.level-10::after { left: 90px; }
+    .comment .user-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .comment .user-info img {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .comment .timestamp {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    .reply-btn {
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .reply-form {
+      margin-top: 10px;
+      display: none;
+    }
+    .reply-form.active {
+      display: block;
+    }
+    .msg {
+      width: 100%;
+      max-width: 450px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+    .msg.success { background-color: var(--success-color); color: #fff; }
+    .msg.error { background-color: var(--error-color); color: #fff; }
+    @media (max-width: 600px) {
+      .main-content { padding: 15px; }
+      .post, .comment-form, .comment { padding: 15px; }
+      .comment.level-1 { padding-left: 25px; }
+      .comment.level-2 { padding-left: 35px; }
+      .comment.level-3 { padding-left: 45px; }
+      .comment.level-4 { padding-left: 55px; }
+      .comment.level-5,
+      .comment.level-6,
+      .comment.level-7,
+      .comment.level-8,
+      .comment.level-9,
+      .comment.level-10 { padding-left: 65px; }
+      .comment:not(.level-0)::before { left: 5px; }
+      .comment:not(.level-0)::after { left: 5px; width: 10px; }
+      .comment.level-1::before { left: 5px; }
+      .comment.level-1::after { left: 5px; }
+      .comment.level-2::before { left: 15px; }
+      .comment.level-2::after { left: 15px; }
+      .comment.level-3::before { left: 25px; }
+      .comment.level-3::after { left: 25px; }
+      .comment.level-4::before { left: 35px; }
+      .comment.level-4::after { left: 35px; }
+      .comment.level-5::before,
+      .comment.level-6::before,
+      .comment.level-7::before,
+      .comment.level-8::before,
+      .comment.level-9::before,
+      .comment.level-10::before { left: 45px; }
+      .comment.level-5::after,
+      .comment.level-6::after,
+      .comment.level-7::after,
+      .comment.level-8::after,
+      .comment.level-9::after,
+      .comment.level-10::after { left: 45px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+    <img src="https://via.placeholder.com/100?text=Logo" alt="Logo Mini Comunidade" class="logo">
+  </div>
+
+  <div class="main-content">
+    <div class="post" id="post"></div>
+    <div class="comment-form" id="mainCommentForm">
+      <form id="commentForm">
+        <textarea id="commentContent" placeholder="Escreva um comentário..." required></textarea>
+        <button type="submit"><i class="fas fa-paper-plane"></i> Comentar</button>
+      </form>
+    </div>
+    <div class="comments" id="comments"></div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'https://imbjlrtdzysskwhaiqmg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYmpscnRkenlzc2t3aGFpcW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNjQxODIsImV4cCI6MjA2MDg0MDE4Mn0.ujtXCEPUT3dYjXHs8168Mx1EJCWH7l79n9olttIM8HU';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const msg = document.getElementById('msg');
+    const postDiv = document.getElementById('post');
+    const commentsDiv = document.getElementById('comments');
+    let currentUserId = null;
+    const postId = new URLSearchParams(window.location.search).get('postId');
+
+    function showMessage(text, type) {
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+      setTimeout(() => msg.className = 'msg', 3000);
+    }
+
+    async function checkAuth() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session || !session.user) {
+        showMessage('Sessão inválida. Faça login novamente.', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1000);
+        return;
+      }
+      currentUserId = session.user.id;
+      await loadPost();
+      await loadComments();
+      setupRealtime();
+    }
+
+    async function loadPost() {
+      if (!postId) {
+        showMessage('Postagem não encontrada.', 'error');
+        return;
+      }
+      const { data: post, error } = await supabase
+        .from('postagens')
+        .select('postagem_id, conteudo, imagem_url, criado_em, usuario_id')
+        .eq('postagem_id', postId)
+        .single();
+
+      if (error) {
+        showMessage('Erro ao carregar postagem: ' + error.message, 'error');
+        return;
+      }
+
+      const { data: perfil } = await supabase
+        .from('perfis')
+        .select('nome, foto_perfil')
+        .eq('usuario_id', post.usuario_id)
+        .single();
+
+      postDiv.innerHTML = `
+        <div class="user-info">
+          <img src="${perfil?.foto_perfil || 'https://via.placeholder.com/40'}" alt="Foto do usuário">
+          <div>
+            <strong>${perfil?.nome || 'Usuário'}</strong>
+            <div class="timestamp">${new Date(post.criado_em).toLocaleString('pt-BR')}</div>
+          </div>
+        </div>
+        <p>${post.conteudo}</p>
+        ${post.imagem_url ? `<img src="${post.imagem_url}" alt="Imagem da postagem">` : ''}
+      `;
+    }
+
+    async function loadComments() {
+      const { data: comments, error } = await supabase
+        .from('comentarios')
+        .select('comentario_id, conteudo, criado_em, usuario_id, id_pai')
+        .eq('postagem_id', postId)
+        .order('criado_em', { ascending: false });
+
+      if (error) {
+        showMessage('Erro ao carregar comentários: ' + error.message, 'error');
+        return;
+      }
+
+      commentsDiv.innerHTML = '';
+      const commentTree = buildCommentTree(comments);
+      await renderComments(commentTree, 0);
+    }
+
+    function buildCommentTree(comments) {
+      const commentMap = {};
+      const tree = [];
+
+      comments.forEach(comment => {
+        comment.children = [];
+        commentMap[comment.comentario_id] = comment;
+      });
+
+      comments.forEach(comment => {
+        if (comment.id_pai && commentMap[comment.id_pai]) {
+          commentMap[comment.id_pai].children.push(comment);
+        } else if (!comment.id_pai) {
+          tree.push(comment);
+        }
+      });
+
+      Object.values(commentMap).forEach(comment => {
+        comment.children.sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em));
+      });
+
+      tree.sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+
+      return tree;
+    }
+
+    async function getUserName(userId) {
+      const { data: perfil, error } = await supabase
+        .from('perfis')
+        .select('nome')
+        .eq('usuario_id', userId)
+        .single();
+      return error || !perfil ? 'Usuário' : perfil.nome;
+    }
+
+    async function renderComments(comments, level = 0) {
+      for (const comment of comments) {
+        const { data: perfil, error: perfilError } = await supabase
+          .from('perfis')
+          .select('nome, foto_perfil')
+          .eq('usuario_id', comment.usuario_id)
+          .single();
+
+        let replyToText = '';
+        if (comment.id_pai) {
+          const { data: parentComment, error: parentError } = await supabase
+            .from('comentarios')
+            .select('usuario_id')
+            .eq('comentario_id', comment.id_pai)
+            .single();
+          if (!parentError && parentComment) {
+            const parentName = await getUserName(parentComment.usuario_id);
+            replyToText = `@${parentName} `;
+          }
+        }
+
+        const commentDiv = document.createElement('div');
+        commentDiv.classList.add('comment', `level-${level}`);
+        commentDiv.setAttribute('data-comment-id', comment.comentario_id);
+        commentDiv.innerHTML = `
+          <div class="user-info">
+            <img src="${perfil?.foto_perfil || 'https://via.placeholder.com/30'}" alt="Foto do usuário">
+            <div>
+              <strong>${perfil?.nome || 'Usuário'}</strong>
+              <div class="timestamp">${new Date(comment.criado_em).toLocaleString('pt-BR')}</div>
+            </div>
+          </div>
+          <p>${replyToText}${comment.conteudo}</p>
+          <button class="reply-btn">Responder</button>
+          <div class="reply-form">
+            <div class="comment-form">
+              <form class="replyForm">
+                <textarea placeholder="Escreva uma resposta..." required></textarea>
+                <button type="submit"><i class="fas fa-paper-plane"></i> Responder</button>
+              </form>
+            </div>
+          </div>
+        `;
+        commentsDiv.appendChild(commentDiv);
+
+        commentDiv.querySelector('.reply-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const replyForm = commentDiv.querySelector('.reply-form');
+          replyForm.classList.toggle('active');
+        });
+
+        commentDiv.querySelector('.replyForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const conteudo = e.target.querySelector('textarea').value.trim();
+          if (!conteudo) {
+            showMessage('Escreva uma resposta.', 'error');
+            return;
+          }
+          const { error } = await supabase
+            .from('comentarios')
+            .insert({
+              postagem_id: postId,
+              usuario_id: currentUserId,
+              conteudo,
+              id_pai: comment.comentario_id
+            });
+
+          if (error) {
+            showMessage('Erro ao publicar resposta: ' + error.message, 'error');
+          } else {
+            showMessage('Resposta publicada!', 'success');
+            e.target.reset();
+            commentDiv.querySelector('.reply-form').classList.remove('active');
+            await loadComments();
+          }
+        });
+
+        if (comment.children && comment.children.length > 0) {
+          await renderComments(comment.children, level + 1);
+        }
+      }
+    }
+
+    function setupRealtime() {
+      supabase
+        .channel('comentarios')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'comentarios', filter: `postagem_id=eq.${postId}` },
+          () => loadComments()
+        )
+        .subscribe();
+    }
+
+    document.getElementById('commentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const conteudo = document.getElementById('commentContent').value.trim();
+
+      if (!conteudo) {
+        showMessage('Escreva um comentário.', 'error');
+        return;
+      }
+
+      if (!currentUserId) {
+        showMessage('Erro: Usuário não autenticado. Faça login novamente.', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1000);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('comentarios')
+        .insert({
+          postagem_id: postId,
+          usuario_id: currentUserId,
+          conteudo,
+          id_pai: null
+        });
+
+      if (error) {
+        showMessage('Erro ao publicar comentário: ' + error.message, 'error');
+      } else {
+        showMessage('Comentário publicado!', 'success');
+        e.target.reset();
+        await loadComments();
+      }
+    });
+
+    document.querySelector('.back-btn').addEventListener('click', () => {
+      window.location.href = 'app.html';
+    });
+
+    checkAuth();
+  </script>
+</body>
+</html>

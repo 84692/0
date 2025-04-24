@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Comunidade - Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary-color: #6A5ACD;
+      --secondary-color: #483D8B;
+      --background-color: #000000;
+      --text-color: #ffffff;
+      --success-color: #6A5ACD;
+      --error-color: #ff4040;
+    }
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-container {
+      background: #1a1a1a;
+      padding: 30px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      border: 1px solid var(--primary-color);
+    }
+    .logo {
+      width: 150px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid var(--primary-color);
+      border-radius: 5px;
+      background: #333;
+      color: var(--text-color);
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+      margin: 10px 0;
+    }
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+    .toggle-link {
+      color: var(--primary-color);
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 10px;
+      display: inline-block;
+    }
+    .toggle-link:hover {
+      color: var(--secondary-color);
+    }
+    .msg {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .msg.success { background-color: var(--success-color); color: #fff; }
+    .msg.error { background-color: var(--error-color); color: #fff; }
+    .hidden { display: none; }
+    @media (max-width: 600px) {
+      .login-container { padding: 20px; }
+      h1 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <img src="https://via.placeholder.com/150?text=Logo" alt="Logo Mini Comunidade" class="logo">
+    <h1 id="formTitle">Login</h1>
+    <div id="loginForm">
+      <input type="email" id="email" placeholder="Email" required autofocus>
+      <input type="password" id="senha" placeholder="Senha" required>
+      <button id="btnEntrar"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+      <span class="toggle-link" id="toggleCadastrar">Cadastrar</span>
+    </div>
+    <div id="cadastroForm" class="hidden">
+      <input type="text" id="nomeCadastro" placeholder="Nome de usuário" required>
+      <input type="email" id="emailCadastro" placeholder="Email" required>
+      <input type="password" id="senhaCadastro" placeholder="Senha" required>
+      <button id="btnCadastrar"><i class="fas fa-user-plus"></i> Cadastrar</button>
+      <span class="toggle-link" id="toggleEntrar">Voltar ao Login</span>
+    </div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'https://imbjlrtdzysskwhaiqmg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYmpscnRkenlzc2t3aGFpcW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNjQxODIsImV4cCI6MjA2MDg0MDE4Mn0.ujtXCEPUT3dYjXHs8168Mx1EJCWH7l79n9olttIM8HU';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const msg = document.getElementById('msg');
+    const formTitle = document.getElementById('formTitle');
+    const loginForm = document.getElementById('loginForm');
+    const cadastroForm = document.getElementById('cadastroForm');
+    const toggleCadastrar = document.getElementById('toggleCadastrar');
+    const toggleEntrar = document.getElementById('toggleEntrar');
+
+    function showMessage(text, type) {
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+      setTimeout(() => msg.className = 'msg', 3000);
+    }
+
+    function showLoginForm() {
+      formTitle.textContent = 'Login';
+      loginForm.classList.remove('hidden');
+      cadastroForm.classList.add('hidden');
+      document.getElementById('email').focus();
+    }
+
+    function showCadastroForm() {
+      formTitle.textContent = 'Cadastrar';
+      cadastroForm.classList.remove('hidden');
+      loginForm.classList.add('hidden');
+      document.getElementById('nomeCadastro').focus();
+    }
+
+    toggleCadastrar.addEventListener('click', showCadastroForm);
+    toggleEntrar.addEventListener('click', showLoginForm);
+
+    async function createUserProfile(userId, nome, email) {
+      try {
+        console.log('1. Inserindo em usuarios:', { usuario_id: userId, email });
+        const { data: usuarioData, error: userError } = await supabase
+          .from('usuarios')
+          .insert({
+            usuario_id: userId,
+            email,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        if (userError) throw new Error(`Erro ao inserir em usuarios: ${userError.message}`);
+        console.log('Usuário inserido:', usuarioData);
+
+        console.log('2. Inserindo em perfis:', { usuario_id: userId, nome, email });
+        const { data: perfilData, error: profileError } = await supabase
+          .from('perfis')
+          .insert({
+            usuario_id: userId,
+            nome,
+            email,
+            foto_perfil: 'https://via.placeholder.com/100',
+            seguidores: 0
+          })
+          .select()
+          .single();
+        if (profileError) throw new Error(`Erro ao inserir em perfis: ${profileError.message}`);
+        console.log('Perfil inserido:', perfilData);
+
+        console.log('3. Inserindo em configuracoes:', { usuario_id: userId });
+        const { data: configData, error: configError } = await supabase
+          .from('configuracoes')
+          .insert({
+            usuario_id: userId,
+            tema: 'escuro',
+            notificacoes: true
+          })
+          .select()
+          .single();
+        if (configError) throw new Error(`Erro ao inserir em configuracoes: ${configError.message}`);
+        console.log('Configurações inseridas:', configData);
+
+        console.log('4. Inserindo em moderacao:', { usuario_id: userId });
+        const { data: moderacaoData, error: moderacaoError } = await supabase
+          .from('moderacao')
+          .insert({
+            usuario_id: userId,
+            patente: 'Elfo Comum'
+          })
+          .select()
+          .single();
+        if (moderacaoError) throw new Error(`Erro ao inserir em moderacao: ${moderacaoError.message}`);
+        console.log('Moderação inserida:', moderacaoData);
+      } catch (error) {
+        console.error('Erro em createUserProfile:', error);
+        throw error;
+      }
+    }
+
+    document.getElementById('btnEntrar').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+
+      if (!email || !senha) {
+        showMessage('Preencha email e senha.', 'error');
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: senha
+        });
+
+        if (error) throw new Error(`Erro ao fazer login: ${error.message}`);
+
+        if (data.user) {
+          const { data: existingUser, error: userError } = await supabase
+            .from('usuarios')
+            .select('usuario_id')
+            .eq('usuario_id', data.user.id)
+            .single();
+
+          if (userError && userError.code !== 'PGRST116') {
+            throw new Error(`Erro ao verificar usuário: ${userError.message}`);
+          }
+
+          if (!existingUser) {
+            const nome = data.user.user_metadata.nome || email.split('@')[0];
+            await createUserProfile(data.user.id, nome, email);
+          }
+
+          window.location.href = 'app.html';
+        }
+      } catch (error) {
+        showMessage('Erro ao entrar: ' + error.message, 'error');
+      }
+    });
+
+    document.getElementById('btnCadastrar').addEventListener('click', async () => {
+      const nome = document.getElementById('nomeCadastro').value.trim();
+      const email = document.getElementById('emailCadastro').value.trim();
+      const senha = document.getElementById('senhaCadastro').value.trim();
+
+      if (!nome || !email || !senha) {
+        showMessage('Preencha todos os campos.', 'error');
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showMessage('Email inválido.', 'error');
+        return;
+      }
+
+      if (senha.length < 6) {
+        showMessage('A senha deve ter pelo menos 6 caracteres.', 'error');
+        return;
+      }
+
+      try {
+        console.log('Tentando criar usuário:', { email, nome });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: senha,
+          options: { data: { nome } }
+        });
+
+        if (error) throw new Error(`Erro ao criar usuário: ${error.message}`);
+
+        if (data.user) {
+          console.log('Usuário criado:', { userId: data.user.id });
+          await createUserProfile(data.user.id, nome, email);
+          showMessage('Cadastro realizado! Faça login.', 'success');
+          showLoginForm();
+        } else {
+          showMessage('Confirme seu email antes de fazer login.', 'success');
+          showLoginForm();
+        }
+      } catch (error) {
+        showMessage('Erro ao cadastrar: ' + error.message, 'error');
+        console.error('Detalhes do erro:', error);
+      }
+    });
+
+    showLoginForm();
+  </script>
+</body>
+</html>

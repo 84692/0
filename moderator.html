@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Comunidade - Moderador</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary-color: #6A5ACD;
+      --secondary-color: #483D8B;
+      --background-color: #000000;
+      --text-color: #ffffff;
+      --success-color: #6A5ACD;
+      --error-color: #ff4040;
+    }
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: #1a1a1a;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+    .back-btn {
+      font-size: 24px;
+      color: var(--primary-color);
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    .logo {
+      width: 100px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .main-content {
+      margin-top: 70px;
+      width: 100%;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+    }
+    .mod-section {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--primary-color);
+      margin-bottom: 20px;
+    }
+    .mod-section h2 {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    .mod-section input, .mod-section select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid var(--primary-color);
+      border-radius: 5px;
+      background: #333;
+      color: var(--text-color);
+      font-size: 16px;
+    }
+    .mod-section button {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .mod-section button:hover {
+      background-color: var(--secondary-color);
+    }
+    .msg {
+      width: 100%;
+      max-width: 450px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+    .msg.success { background-color: var(--success-color); color: #fff; }
+    .msg.error { background-color: var(--error-color); color: #fff; }
+    @media (max-width: 600px) {
+      .main-content { padding: 15px; }
+      .mod-section { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+    <img src="https://via.placeholder.com/100?text=Logo" alt="Logo Mini Comunidade" class="logo">
+  </div>
+
+  <div class="main-content">
+    <div class="mod-section">
+      <h2>Banir Elfo</h2>
+      <form id="banForm">
+        <input type="text" id="banUserId" placeholder="ID do usuário" required>
+        <button type="submit"><i class="fas fa-ban"></i> Banir</button>
+      </form>
+    </div>
+    <div class="mod-section">
+      <h2>Atribuir Patente</h2>
+      <form id="patenteForm">
+        <input type="text" id="patenteUserId" placeholder="ID do usuário" required>
+        <select id="patenteSelect" required>
+          <option value="" disabled selected>Selecione a patente</option>
+          <option value="Elfo Líder">Elfo Líder</option>
+          <option value="Elfo ADM Segundo">Elfo ADM Segundo</option>
+          <option value="Elfo ADM Terceiro">Elfo ADM Terceiro</option>
+          <option value="Elfo Moderador">Elfo Moderador</option>
+          <option value="Elfo Comum">Elfo Comum</option>
+        </select>
+        <button type="submit"><i class="fas fa-shield-alt"></i> Atribuir</button>
+      </form>
+    </div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'https://imbjlrtdzysskwhaiqmg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYmpscnRkenlzc2t3aGFpcW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNjQxODIsImV4cCI6MjA2MDg0MDE4Mn0.ujtXCEPUT3dYjXHs8168Mx1EJCWH7l79n9olttIM8HU';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const msg = document.getElementById('msg');
+    let currentUserId = null;
+    const ELFO_LIDER_ID = '40ceab2c-00ec-4703-ad54-6237acf74515';
+
+    function showMessage(text, type) {
+      msg.textContent = text;
+      msg.className = `msg ${type}`;
+      setTimeout(() => msg.className = 'msg', 3000);
+    }
+
+    async function checkAuth() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session || !session.user) {
+        showMessage('Sessão inválida. Faça login novamente.', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1000);
+        return false;
+      }
+      currentUserId = session.user.id;
+      const { data: perfil } = await supabase
+        .from('perfis')
+        .select('patente')
+        .eq('usuario_id', currentUserId)
+        .single();
+      const allowedPatentes = ['Elfo Líder', 'Elfo ADM Segundo', 'Elfo ADM Terceiro', 'Elfo Moderador'];
+      if (!perfil || !allowedPatentes.includes(perfil.patente)) {
+        showMessage('Acesso negado. Apenas moderadores podem acessar esta página.', 'error');
+        setTimeout(() => window.location.href = 'app.html', 1000);
+        return false;
+      }
+      return true;
+    }
+
+    async function canBan(bannerPatente, targetId, targetPatente) {
+      if (targetId === ELFO_LIDER_ID) return false;
+      if (bannerPatente === 'Elfo Líder') return true;
+      if (bannerPatente === 'Elfo ADM Segundo' && ['Elfo Moderador', 'Elfo Comum'].includes(targetPatente)) return true;
+      if (bannerPatente === 'Elfo ADM Terceiro' && targetPatente === 'Elfo Comum') return true;
+      if (bannerPatente === 'Elfo Moderador' && targetPatente === 'Elfo Comum') return true;
+      return false;
+    }
+
+    async function canAssignPatente(assignerPatente) {
+      return assignerPatente === 'Elfo Líder';
+    }
+
+    async function checkAdmLimit(patente) {
+      if (!['Elfo Líder', 'Elfo ADM Segundo', 'Elfo ADM Terceiro'].includes(patente)) return true;
+      const { data: adms } = await supabase
+        .from('perfis')
+        .select('patente')
+        .in('patente', ['Elfo Líder', 'Elfo ADM Segundo', 'Elfo ADM Terceiro']);
+      const admCount = adms.filter(adm => adm.patente === patente).length;
+      return admCount === 0;
+    }
+
+    document.getElementById('banForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!await checkAuth()) return;
+      
+      const userId = document.getElementById('banUserId').value.trim();
+      if (!userId) {
+        showMessage('Insira um ID de usuário.', 'error');
+        return;
+      }
+
+      const { data: perfil } = await supabase
+        .from('perfis')
+        .select('patente')
+        .eq('usuario_id', currentUserId)
+        .single();
+
+      const { data: targetPerfil } = await supabase
+        .from('perfis')
+        .select('patente, banido')
+        .eq('usuario_id', userId)
+        .single();
+
+      if (!targetPerfil) {
+        showMessage('Usuário não encontrado.', 'error');
+        return;
+      }
+      if (targetPerfil.banido) {
+        showMessage('Usuário já está banido.', 'error');
+        return;
+      }
+      if (!await canBan(perfil.patente, userId, targetPerfil.patente)) {
+        showMessage('Você não tem permissão para banir este usuário.', 'error');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('perfis')
+        .update({ banido: true })
+        .eq('usuario_id', userId);
+
+      if (error) {
+        showMessage('Erro ao banir usuário: ' + error.message, 'error');
+      } else {
+        showMessage('Usuário banido com sucesso!', 'success');
+        e.target.reset();
+      }
+    });
+
+    document.getElementById('patenteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!await checkAuth()) return;
+
+      const userId = document.getElementById('patenteUserId').value.trim();
+      const patente = document.getElementById('patenteSelect').value;
+
+      if (!userId || !patente) {
+        showMessage('Preencha todos os campos.', 'error');
+        return;
+      }
+
+      const { data: perfil } = await supabase
+        .from('perfis')
+        .select('patente')
+        .eq('usuario_id', currentUserId)
+        .single();
+
+      if (!await canAssignPatente(perfil.patente)) {
+        showMessage('Apenas o Elfo Líder pode atribuir patentes.', 'error');
+        return;
+      }
+
+      const { data: targetPerfil } = await supabase
+        .from('perfis')
+        .select('patente')
+        .eq('usuario_id', userId)
+        .single();
+
+      if (!targetPerfil) {
+        showMessage('Usuário não encontrado.', 'error');
+        return;
+      }
+
+      if (!await checkAdmLimit(patente)) {
+        showMessage(`Já existe um ${patente}. O limite é 1 por patente ADM.`, 'error');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('perfis')
+        .update({ patente })
+        .eq('usuario_id', userId);
+
+      if (error) {
+        showMessage('Erro ao atribuir patente: ' + error.message, 'error');
+      } else {
+        showMessage('Patente atribuída com sucesso!', 'success');
+        e.target.reset();
+      }
+    });
+
+    document.querySelector('.back-btn').addEventListener('click', () => {
+      window.location.href = 'app.html';
+    });
+
+    // Atribuir Elfo Líder ao usuário especificado
+    async function setElfoLider() {
+      const { error } = await supabase
+        .from('perfis')
+        .update({ patente: 'Elfo Líder' })
+        .eq('usuario_id', ELFO_LIDER_ID);
+      if (error) {
+        console.error('Erro ao atribuir Elfo Líder:', error.message);
+      }
+    }
+
+    setElfoLider();
+    checkAuth();
+  </script>
+</body>
+</html>
