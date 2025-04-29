@@ -205,6 +205,25 @@
     .like-btn.liked {
       color: #ff4040;
     }
+    .load-more-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .load-more-btn:hover {
+      background-color: var(--secondary-color);
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--primary-color);
+    }
     .msg {
       width: 100%;
       max-width: 450px;
@@ -229,7 +248,7 @@
 <body>
   <div class="top-bar">
     <button class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
-    <img src="https://via.placeholder.com/100?text=Logo" alt="Logo Mini Comunidade" class="logo">
+    <img id="logo" src="https://imbjlrtdzysskwhaiqmg.supabase.co/storage/v1/object/sign/logos/logoandname.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzA5NzE5MmUyLWJjYWYtNGQ0Mi04MGUzLTgwZjBkYzU2ZGE1ZCJ9.eyJ1cmwiOiJsb2dvcy9sb2dvYW5kbmFtZS5wbmciLCJpYXQiOjE3NDU4OTk1MzEsImV4cCI6MzMyODE4OTk1MzF9.p3kZ5Afx4HQWFwcZGmQA_2tQm1pEJbdLAkb9qeMhsJs" alt="Logo Mini Comunidade" class="logo">
   </div>
 
   <div class="main-content">
@@ -241,6 +260,8 @@
       </form>
     </div>
     <div class="posts" id="posts"></div>
+    <div class="loading" id="loading" style="display: none;">Carregando...</div>
+    <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Carregar Mais</button>
     <div id="msg" class="msg"></div>
   </div>
 
@@ -261,7 +282,29 @@
     const postsDiv = document.getElementById('posts');
     const postForm = document.getElementById('postForm');
     const modBtn = document.getElementById('modBtn');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const loadingDiv = document.getElementById('loading');
     let currentUserId = null;
+    let page = 0;
+    const pageSize = 10;
+    let hasMorePosts = true;
+    const defaultProfileImage = 'https://imbjlrtdzysskwhaiqmg.supabase.co/storage/v1/object/sign/icon/Perfil%20icon%201.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzA5NzE5MmUyLWJjYWYtNGQ0Mi04MGUzLTgwZjBkYzU2ZGE1ZCJ9.eyJ1cmwiOiJpY29uL1BlcmZpbCBpY29uIDEucG5nIiwiaWF0IjoxNzQ1ODk2NjE1LCJleHAiOjMzMjgxODk2NjE1fQ.b2UDO1CasOi-QI_vx6oWoiOfQdWjuXvislGRvi4-hZw';
+    const defaultLogoUrl = 'https://imbjlrtdzysskwhaiqmg.supabase.co/storage/v1/object/sign/logos/logoandname.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzA5NzE5MmUyLWJjYWYtNGQ0Mi04MGUzLTgwZjBkYzU2ZGE1ZCJ9.eyJ1cmwiOiJsb2dvcy9sb2dvYW5kbmFtZS5wbmciLCJpYXQiOjE3NDU4OTk1MzEsImV4cCI6MzMyODE4OTk1MzF9.p3kZ5Afx4HQWFwcZGmQA_2tQm1pEJbdLAkb9qeMhsJs';
+
+    // Gerenciar logo no localStorage
+    function setLogo() {
+      const storedLogo = localStorage.getItem('appLogo');
+      const logoElement = document.getElementById('logo');
+      if (storedLogo !== defaultLogoUrl) {
+        localStorage.setItem('appLogo', defaultLogoUrl);
+        logoElement.src = defaultLogoUrl;
+      } else {
+        logoElement.src = storedLogo;
+      }
+    }
+
+    // Inicializar logo
+    setLogo();
 
     function showMessage(text, type) {
       msg.textContent = text;
@@ -278,7 +321,7 @@
       }
       currentUserId = session.user.id;
       await checkModeratorStatus();
-      await loadPosts();
+      await loadPosts(true);
       setupRealtime();
     }
 
@@ -294,90 +337,117 @@
       }
     }
 
-    async function loadPosts() {
-      const { data: posts, error } = await supabase
-        .from('postagens')
-        .select('postagem_id, conteudo, imagem_url, criado_em, usuario_id')
-        .order('criado_em', { ascending: false });
+    async function loadPosts(isInitial = false) {
+      if (!hasMorePosts && !isInitial) return;
+      loadingDiv.style.display = 'block';
+      loadMoreBtn.style.display = 'none';
 
-      if (error) {
-        showMessage('Erro ao carregar postagens: ' + error.message, 'error');
-        return;
-      }
+      try {
+        if (isInitial) {
+          const cachedPosts = localStorage.getItem('feedCache');
+          if (cachedPosts) {
+            renderPosts(JSON.parse(cachedPosts), false);
+          }
+        }
 
-      postsDiv.innerHTML = '';
+        const { data: posts, error } = await supabase
+          .from('postagens')
+          .select(`
+            postagem_id, conteudo, imagem_url, criado_em, usuario_id,
+            curtidas,
+            comentarios(count)
+          `)
+          .order('criado_em', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (posts.length === 0) {
-        postsDiv.innerHTML = '<p>Nenhuma postagem encontrada.</p>';
-        return;
-      }
+        if (error) throw error;
 
-      for (const post of posts) {
-        const { data: perfil } = await supabase
+        if (posts.length < pageSize) hasMorePosts = false;
+        if (posts.length === 0 && page === 0) {
+          postsDiv.innerHTML = '<p>Nenhuma postagem encontrada.</p>';
+          return;
+        }
+
+        const userIds = [...new Set(posts.map(post => post.usuario_id))];
+        const { data: perfis } = await supabase
           .from('perfis')
-          .select('nome, foto_perfil')
-          .eq('usuario_id', post.usuario_id)
-          .single();
+          .select('usuario_id, nome, foto_perfil')
+          .in('usuario_id', userIds);
 
-        const likeCount = await getLikesCount(post.postagem_id);
-        const isLiked = await getLikeStatus(post.postagem_id);
-        const commentCount = await getCommentCount(post.postagem_id);
+        const enrichedPosts = posts.map(post => {
+          const perfil = perfis.find(p => p.usuario_id === post.usuario_id) || {
+            nome: 'Usuário',
+            foto_perfil: defaultProfileImage
+          };
+          return {
+            ...post,
+            perfil,
+            likeCount: post.curtidas?.length || 0,
+            isLiked: post.curtidas?.includes(currentUserId) || false,
+            commentCount: post.comentarios[0]?.count || 0
+          };
+        });
 
-        const postDiv = document.createElement('div');
-        postDiv.classList.add('post');
-        postDiv.setAttribute('data-post-id', post.postagem_id);
+        renderPosts(enrichedPosts, isInitial);
 
-        postDiv.innerHTML = `
-          <div class="user-info" data-user-id="${post.usuario_id}">
-            <img src="${perfil?.foto_perfil || 'https://via.placeholder.com/40'}" alt="Foto do usuário">
-            <div>
-              <strong>${perfil?.nome || 'Usuário'}</strong>
-              <div class="timestamp">${new Date(post.criado_em).toLocaleString('pt-BR')}</div>
-            </div>
-          </div>
-          <p>${post.conteudo}</p>
-          ${post.imagem_url ? `<img src="${post.imagem_url}" alt="Imagem da postagem">` : ''}
-          <div class="post-actions">
-            <button class="like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.postagem_id}">
-              <i class="fas fa-heart"></i> <span>${likeCount}</span>
-            </button>
-            <button class="comment-btn" data-post-id="${post.postagem_id}">
-              <i class="fas fa-comment"></i> Comentar (${commentCount})
-            </button>
-          </div>
-        `;
-        postsDiv.appendChild(postDiv);
+        if (isInitial && posts.length > 0) {
+          localStorage.setItem('feedCache', JSON.stringify(enrichedPosts));
+        }
+
+        page++;
+        loadMoreBtn.style.display = hasMorePosts ? 'block' : 'none';
+      } catch (error) {
+        showMessage('Erro ao carregar postagens: ' + error.message, 'error');
+      } finally {
+        loadingDiv.style.display = 'none';
       }
     }
 
-    async function getLikesCount(postId) {
-      const { data } = await supabase
-        .from('postagens')
-        .select('curtidas')
-        .eq('postagem_id', postId)
-        .single();
-      return data?.curtidas?.length || 0;
-    }
+    function renderPosts(posts, clear = true) {
+      if (clear) postsDiv.innerHTML = '';
 
-    async function getLikeStatus(postId) {
-      const { data } = await supabase
-        .from('postagens')
-        .select('curtidas')
-        .eq('postagem_id', postId)
-        .single();
-      return data?.curtidas?.includes(currentUserId) || false;
-    }
+      const batchSize = 5;
+      let index = 0;
 
-    async function getCommentCount(postId) {
-      const { count } = await supabase
-        .from('comentarios')
-        .select('comentario_id', { count: 'exact' })
-        .eq('postagem_id', postId);
-      return count || 0;
+      function renderBatch() {
+        const slice = posts.slice(index, index + batchSize);
+        slice.forEach(post => {
+          const postDiv = document.createElement('div');
+          postDiv.classList.add('post');
+          postDiv.setAttribute('data-post-id', post.postagem_id);
+          postDiv.innerHTML = `
+            <div class="user-info" data-user-id="${post.usuario_id}">
+              <img src="${post.perfil.foto_perfil}" alt="Foto do usuário">
+              <div>
+                <strong>${post.perfil.nome}</strong>
+                <div class="timestamp">${new Date(post.criado_em).toLocaleString('pt-BR')}</div>
+              </div>
+            </div>
+            <p>${post.conteudo}</p>
+            ${post.imagem_url ? `<img src="${post.imagem_url}" alt="Imagem da postagem">` : ''}
+            <div class="post-actions">
+              <button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.postagem_id}">
+                <i class="fas fa-heart"></i> <span>${post.likeCount}</span>
+              </button>
+              <button class="comment-btn" data-post-id="${post.postagem_id}">
+                <i class="fas fa-comment"></i> Comentar (${post.commentCount})
+              </button>
+            </div>
+          `;
+          postsDiv.appendChild(postDiv);
+        });
+
+        index += batchSize;
+        if (index < posts.length) {
+          requestAnimationFrame(renderBatch);
+        }
+      }
+
+      requestAnimationFrame(renderBatch);
     }
 
     async function toggleLike(postId, likeButton, countSpan) {
-      const isLiked = await getLikeStatus(postId);
+      const isLiked = likeButton.classList.contains('liked');
       let newCurtidas;
 
       if (isLiked) {
@@ -416,7 +486,11 @@
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'postagens' },
-          () => loadPosts()
+          () => {
+            page = 0;
+            hasMorePosts = true;
+            loadPosts(true);
+          }
         )
         .subscribe();
     }
@@ -446,7 +520,9 @@
         showMessage('Postagem publicada!', 'success');
         e.target.reset();
         postForm.classList.remove('active');
-        await loadPosts();
+        page = 0;
+        hasMorePosts = true;
+        await loadPosts(true);
       }
     });
 
@@ -472,6 +548,8 @@
     document.querySelector('.mod-btn').addEventListener('click', () => {
       window.location.href = 'moderator.html';
     });
+
+    loadMoreBtn.addEventListener('click', () => loadPosts());
 
     postsDiv.addEventListener('click', async (e) => {
       const likeBtn = e.target.closest('.like-btn');

@@ -20,10 +20,14 @@
       color: var(--text-color);
       font-family: Arial, sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
       min-height: 100vh;
       padding: 20px;
+    }
+    .logo {
+      width: 150px;
+      margin: 20px 0;
     }
     .login-container {
       background: #1a1a1a;
@@ -33,10 +37,6 @@
       max-width: 400px;
       text-align: center;
       border: 1px solid var(--primary-color);
-    }
-    .logo {
-      width: 150px;
-      margin-bottom: 20px;
     }
     h1 {
       margin-bottom: 20px;
@@ -93,8 +93,8 @@
   </style>
 </head>
 <body>
+  <img id="logo" src="https://imbjlrtdzysskwhaiqmg.supabase.co/storage/v1/object/sign/logos/logoandname.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzA5NzE5MmUyLWJjYWYtNGQ0Mi04MGUzLTgwZjBkYzU2ZGE1ZCJ9.eyJ1cmwiOiJsb2dvcy9sb2dvYW5kbmFtZS5wbmciLCJpYXQiOjE3NDU4OTk1MzEsImV4cCI6MzMyODE4OTk1MzF9.p3kZ5Afx4HQWFwcZGmQA_2tQm1pEJbdLAkb9qeMhsJs" alt="Logo Mini Comunidade" class="logo">
   <div class="login-container">
-    <img src="https://via.placeholder.com/150?text=Logo" alt="Logo Mini Comunidade" class="logo">
     <h1 id="formTitle">Login</h1>
     <div id="loginForm">
       <input type="email" id="email" placeholder="Email" required autofocus>
@@ -125,6 +125,23 @@
     const cadastroForm = document.getElementById('cadastroForm');
     const toggleCadastrar = document.getElementById('toggleCadastrar');
     const toggleEntrar = document.getElementById('toggleEntrar');
+    const defaultProfileImage = 'https://imbjlrtdzysskwhaiqmg.supabase.co/storage/v1/object/sign/icon/Perfil%20icon%201.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzA5NzE5MmUyLWJjYWYtNGQ0Mi04MGUzLTgwZjBkYzU2ZGE1ZCJ9.eyJ1cmwiOiJpY29uL1BeleHRpY29uIDEucG5nIiwiaWF0IjoxNzQ1ODk2NjE1LCJleHAiOjMzMjgxODk2NjE1fQ.b2UDO1CasOi-QI_vx6oWoiOfQdWjuXvislGRvi4-hZw';
+    const defaultLogoUrl = 'https://imbjlrtdzysskwhaiqmg.supabase.co/storage/v1/object/sign/logos/logoandname.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5XzA5NzE5MmUyLWJjYWYtNGQ0Mi04MGUzLTgwZjBkYzU2ZGE1ZCJ9.eyJ1cmwiOiJsb2dvcy9sb2dvYW5kbmFtZS5wbmciLCJpYXQiOjE3NDU4OTk1MzEsImV4cCI6MzMyODE4OTk1MzF9.p3kZ5Afx4HQWFwcZGmQA_2tQm1pEJbdLAkb9qeMhsJs';
+
+    // Gerenciar logo no localStorage
+    function setLogo() {
+      const storedLogo = localStorage.getItem('appLogo');
+      const logoElement = document.getElementById('logo');
+      if (storedLogo !== defaultLogoUrl) {
+        localStorage.setItem('appLogo', defaultLogoUrl);
+        logoElement.src = defaultLogoUrl;
+      } else {
+        logoElement.src = storedLogo;
+      }
+    }
+
+    // Inicializar logo
+    setLogo();
 
     function showMessage(text, type) {
       msg.textContent = text;
@@ -171,7 +188,6 @@
             usuario_id: userId,
             nome,
             email,
-            foto_perfil: 'https://via.placeholder.com/100',
             seguidores: 0
           })
           .select()
